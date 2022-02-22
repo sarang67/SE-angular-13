@@ -1,14 +1,21 @@
 import { Component } from '@angular/core';
-import { typescriptSE } from './learningtypescript';
 
 @Component({
   selector: 'app-root',
-  templateUrl: './app.component.html',
   styleUrls: ['./app.component.css'],
+  template: `
+    <div class="app">
+      <button (click)="handleClick(username.value)">Get value</button>
+      <input type="text" #username />
+      <div>{{ name }}</div>
+    </div>
+  `,
+  // templateUrl: './app.component.html',
 })
 export class AppComponent {
-  title = 'my-first-SE-project';
-  constructor() {
-    typescriptSE();
+  name: string = 'sarangs';
+  handleClick(value: string) {
+    console.log(value);
+    this.name = value;
   }
 }

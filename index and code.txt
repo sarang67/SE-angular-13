@@ -1,0 +1,320 @@
+******************** Getting started*****************
+1 Installing our project :- use common css as a bolierplet
+------------------------
+style.css
+---------
+* {
+  box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  font: 300 15px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica,
+    Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background: #fff;
+  -webkit-font-smoothing: antialiased;
+  color: #545e6f;
+}
+
+img {
+  vertical-align: bottom;
+}
+img a {
+  border: 0;
+}
+ul,
+ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+a {
+  color: #9f72e6;
+  text-decoration: none;
+}
+input,
+button {
+  outline: 0;
+}
+input {
+  border: none;
+  background: #fff;
+  font-size: 13px;
+  padding: 6px 30px 6px 10px;
+  border-radius: 1px;
+  box-shadow: 1px 1px 3px 1px #ccc;
+  border: 1px solid #eee;
+}
+button {
+  cursor: pointer;
+  background: #9f72e6;
+  border: 0;
+  border-radius: 2px;
+  padding: 5px 10px;
+  text-align: center;
+  color: #fff;
+}
+p {
+  margin: 5px 0;
+}
+
+body {
+  padding: 50px;
+}
+
+h3 {
+  font-size: 22px;
+  font-weight: 400;
+  margin: 0;
+}
+h4 {
+  font-size: 18px;
+  font-weight: 300;
+  margin: 0;
+}
+
+
+2 First component with @Component
+==============================
+
+app.component.ts
+----------------
+import { Component } from '@angular/core';
+
+@Component({
+  selector: 'app-root',
+  styleUrls: ['./app.component.css'],
+  template: `
+    <div class="app">
+      {{ title }}
+    </div>
+  `,
+  // templateUrl: './app.component.html',
+})
+export class AppComponent {
+  title: string;
+  constructor() {
+    this.title = 'Awesome Angular';
+  }
+}
+
+
+
+3 Root module with @NgModule
+=============================
+import { NgModule } from '@angular/core';
+import { BrowserModule } from '@angular/platform-browser';
+
+import { AppComponent } from './app.component';
+
+@NgModule({
+  declarations: [AppComponent],
+  imports: [BrowserModule],
+  providers: [],
+  bootstrap: [AppComponent],
+})
+export class AppModule {}
+
+4 Bootstrapping Angular and steps of bootstraping application
+======================
+main.ts
+------
+import { enableProdMode } from '@angular/core';
+import { platformBrowserDynamic } from '@angular/platform-browser-dynamic';
+
+import { AppModule } from './app/app.module';
+import { environment } from './environments/environment';
+
+if (environment.production) {
+  enableProdMode();
+}
+
+platformBrowserDynamic().bootstrapModule(AppModule)
+  .catch(err => console.error(err));
+
+
+
+********************** Template fundamentals******************
+1 interpolation-expressions
+=========================
+app.component.ts
+----------------
+import { Component } from '@angular/core';
+
+@Component({
+  selector: 'app-root',
+  styleUrls: ['./app.component.css'],
+  template: `
+    <div class="app">
+      <div>{{ title }}</div>
+      <div>{{ title + '!' }}</div>
+      <div>{{ numberOne }} {{ numberTwo }}</div>
+      <div>
+        {{ numberOne + numberTwo }}
+      </div>
+      <div>
+        {{ isHappy ? ':)' : ':(' }}
+      </div>
+    </div>
+  `,
+  // templateUrl: './app.component.html',
+})
+export class AppComponent {
+  title: string;
+  isHappy: boolean = false;
+  numberOne: number = 1;
+  numberTwo: number = 2;
+  constructor() {
+    this.title = 'Awwsome Angular';
+  }
+}
+
+2 property-binding
+=================
+app.component.ts
+----------------
+import { Component } from '@angular/core';
+
+@Component({
+  selector: 'app-root',
+  styleUrls: ['./app.component.css'],
+  template: `
+    <div class="app">
+      <h1 [innerHTML]="title"></h1>
+      <!-- document.QuerySelector(h1).innerHtml = "title" -->
+      <h1>{{ title }}</h1>
+      <!--  document.QuerySelector(src).innerHtml = "title"  -->
+      <input type="text" [value]="name" />
+      <!--  document.QuerySelector(input).value = "title" -->
+      <div>{{ name }}</div>
+    </div>
+  `,
+  // templateUrl: './app.component.html',
+})
+export class AppComponent {
+  title: string;
+  name: string = 'sarang';
+  constructor() {
+    this.title = 'Awesome Angular';
+  }
+}
+
+3 event-binding
+=================
+app.component.ts
+----------------
+import { Component } from '@angular/core';
+
+@Component({
+  selector: 'app-root',
+  styleUrls: ['./app.component.css'],
+  template: `
+    <div class="app">
+      <button (click)="handleClick()">Change name</button>
+      <input
+        type="text"
+        [value]="name"
+        (input)="handleInput($event)"
+        (blur)="handleBlur($event)"
+      />
+      <div>{{ name }}</div>
+    </div>
+  `,
+  // templateUrl: './app.component.html',
+})
+export class AppComponent {
+  name: string = 'sarang';
+  handleClick() {
+    this.name = 'jain';
+  }
+  handleInput(event: any) {
+    this.name = event.target.value;
+  }
+  handleBlur(event: any) {
+    this.name = event.target.value;
+  }
+}
+
+4 two-way-binding
+=================
+app.component.ts
+----------------
+import { Component } from '@angular/core';
+
+@Component({
+  selector: 'app-root',
+  styleUrls: ['./app.component.css'],
+  template: `
+    <div class="app">
+      <button (click)="handleClick()">Change name</button>
+      <br />
+      <input
+        type="text"
+        [ngModel]="name"
+        (ngModelChange)="handleChange($event)"
+      />
+      <input type="text" [(ngModel)]="name" />
+      <div>{{ name }}</div>
+    </div>
+  `,
+  // templateUrl: './app.component.html',
+})
+export class AppComponent {
+  name: string = 'sarang';
+  handleClick() {
+    this.name = 'Jain';
+  }
+  handleChange(value: string) {
+    this.name = value;
+  }
+}
+
+/*
+ ngModel and ngModelChange are directive which is created by FormsModule , so import it for this functionality
+*/
+
+app.module.ts
+----------------
+import { NgModule } from '@angular/core';
+import { FormsModule } from '@angular/forms';  <----- added FormsModule
+import { BrowserModule } from '@angular/platform-browser';   
+
+import { AppComponent } from './app.component';
+
+@NgModule({
+  declarations: [AppComponent],
+  imports: [BrowserModule, FormsModule],   <----- added FormsModule
+  providers: [],
+  bootstrap: [AppComponent],
+})
+export class AppModule {}
+
+
+5 template-refs
+================
+import { Component } from '@angular/core';
+
+@Component({
+  selector: 'app-root',
+  styleUrls: ['./app.component.css'],
+  template: `
+    <div class="app">
+      <button (click)="handleClick(username.value)">Get value</button>
+      <input type="text" #username />
+      <div>{{ name }}</div>
+    </div>
+  `,
+  // templateUrl: './app.component.html',
+})
+export class AppComponent {
+  name: string = 'sarangs';
+  handleClick(value: string) {
+    console.log(value);
+    this.name = value;
+  }
+}
