@@ -140,6 +140,7 @@ platformBrowserDynamic().bootstrapModule(AppModule)
 
 
 ********************** Template fundamentals******************
+You can access , javascript variable and expresion in the template using {{}} interpolation.
 1 interpolation-expressions
 =========================
 app.component.ts
@@ -176,6 +177,13 @@ export class AppComponent {
 
 2 property-binding
 =================
+we know in html element we write the attribute, and same element we see in javascript they are object , where all the attribute property are mapped with any property , so angular gives power we can set any property uisng [] syntax.
+
+[anyvalidDomProperty]="variableName or expression"
+
+this is the same like whicjh we do in JS 
+document.querySelecto(element).anyvalidDomProperty = "value"
+
 app.component.ts
 ----------------
 import { Component } from '@angular/core';
@@ -206,6 +214,7 @@ export class AppComponent {
 
 3 event-binding
 =================
+we know in each html element we have action or event like onCLick , onFocus , onInput , onChange etc etc, angular give the flexibilty to register the eventhandler in template onl.
 app.component.ts
 ----------------
 import { Component } from '@angular/core';
@@ -242,6 +251,12 @@ export class AppComponent {
 
 4 two-way-binding
 =================
+[ngModel] and [ngModelChange] both are directive which is coming from  formModule and they are equillent to value and input event .
+
+so the benifit is we can combine as well and achive two way data binding.
+
+[(ngModel)]="variablename"
+
 app.component.ts
 ----------------
 import { Component } from '@angular/core';
@@ -297,6 +312,13 @@ export class AppModule {}
 
 5 template-refs
 ================
+we can make any element refrnce in template , and we can use anywhere in template and can send it
+<p  #mypelement>hello</p>
+
+mypelement is equillent like, how we do in js
+document.querySelector(p);
+
+
 import { Component } from '@angular/core';
 
 @Component({
@@ -318,3 +340,477 @@ export class AppComponent {
     this.name = value;
   }
 }
+
+************************ Rendering flows****************
+app.component.ts
+----------------
+ngIf , and ngFor are the directive which is wrapped upon <ng-template></ng-template> in actual and give the functionality of structrul change , and we use suger syntax of them *ngIf, and *ngFor
+
+*ngIf="expressionfir truthyfalsy"
+*ngFor="let of item of array"
+
+1 ng-if
+=========
+
+import { Component } from '@angular/core';
+
+@Component({
+  selector: 'app-root',
+  styleUrls: ['./app.component.css'],
+  template: `
+    <div class="app">
+      <input type="text" [value]="name" (input)="handleChange($event)" />
+    </div>
+
+    <div *ngIf="name.length > 2">Searching for... {{ name }}</div>
+  `,
+  // templateUrl: './app.component.html',
+})
+export class AppComponent {
+  name: string = '';
+  handleChange(event: any) {
+    this.name = event.target.value;
+  }
+}
+
+
+2 ngFor and iterating collections
+==================================
+app.component.ts
+----------------
+import { Component } from '@angular/core';
+
+interface Passenger {
+  id: number;
+  fullname: string;
+  checkedIn: boolean;
+}
+
+@Component({
+  selector: 'app-root',
+  styleUrls: ['./app.component.css'],
+  template: `
+    <div class="app">
+      <h3>Airline Passengers</h3>
+      <ul>
+        <li *ngFor="let passenger of passengers; let i = index">
+          {{ i }}: {{ passenger.fullname }}
+        </li>
+      </ul>
+    </div>
+  `,
+  // templateUrl: './app.component.html',
+})
+export class AppComponent {
+  passengers: Passenger[] = [
+    {
+      id: 1,
+      fullname: 'Stephen',
+      checkedIn: true,
+    },
+    {
+      id: 2,
+      fullname: 'Rose',
+      checkedIn: false,
+    },
+    {
+      id: 3,
+      fullname: 'James',
+      checkedIn: true,
+    },
+    {
+      id: 4,
+      fullname: 'Louise',
+      checkedIn: true,
+    },
+    {
+      id: 5,
+      fullname: 'Tina',
+      checkedIn: false,
+    },
+  ];
+}
+
+3 ngClass and className bindings
+================================
+📢 This [class] syntax is actually part of Angular’s NgClass directive, through @Input('class'). its not a dom property binding. 
+
+app.component.css
+----------------
+.app {
+}
+.status {
+  width: 10px;
+  height: 10px;
+  background: #c0392b;
+  display: block;
+  margin: 8px 10px 0 0;
+  float: left;
+  border-radius: 50%;
+}
+.status.checked-in {
+  background: #2ecc71;
+}
+
+app.component.ts
+----------------
+import { Component } from '@angular/core';
+
+interface Passenger {
+  id: number;
+  fullname: string;
+  checkedIn: boolean;
+}
+
+@Component({
+  selector: 'app-root',
+  styleUrls: ['./app.component.css'],
+  template: `
+    <div class="app">
+      <h3>Airline Passengers</h3>
+      <ul>
+        <li *ngFor="let passenger of passengers; let i = index">
+          <span
+            class="status"
+            [ngClass]="{
+              'checked-in': passenger.checkedIn,
+              'checked-out': !passenger.checkedIn
+            }"
+          ></span>
+          {{ i }}: {{ passenger.fullname }}
+        </li>
+      </ul>
+
+      <h3>Airline Passengers</h3>
+      <ul>
+        <li *ngFor="let passenger of passengers; let i = index">
+          <span class="status" [class.checked-in]="passenger.checkedIn"></span>
+          {{ i }}: {{ passenger.fullname }}
+        </li>
+      </ul>
+    </div>
+  `,
+  // templateUrl: './app.component.html',
+})
+export class AppComponent {
+  passengers: Passenger[] = [
+    {
+      id: 1,
+      fullname: 'Stephen',
+      checkedIn: true,
+    },
+    {
+      id: 2,
+      fullname: 'Rose',
+      checkedIn: false,
+    },
+    {
+      id: 3,
+      fullname: 'James',
+      checkedIn: true,
+    },
+    {
+      id: 4,
+      fullname: 'Louise',
+      checkedIn: true,
+    },
+    {
+      id: 5,
+      fullname: 'Tina',
+      checkedIn: false,
+    },
+  ];
+}
+
+4 ngStyle and style bindings
+=============================
+app.component.ts
+----------------
+
+import { Component } from '@angular/core';
+
+interface Passenger {
+  id: number;
+  fullname: string;
+  checkedIn: boolean;
+}
+
+@Component({
+  selector: 'app-root',
+  styleUrls: ['./app.component.css'],
+  template: `
+    <div class="app">
+      <h3>Airline Passengers</h3>
+      <ul>
+        <li *ngFor="let passenger of passengers; let i = index">
+          <span
+            class="status"
+            [ngClass]="{
+              'checked-in': passenger.checkedIn,
+              'checked-out': !passenger.checkedIn
+            }"
+          ></span>
+          {{ i }}: {{ passenger.fullname }}
+        </li>
+      </ul>
+
+      <h3>Airline Passengers</h3>
+      <ul>
+        <li *ngFor="let passenger of passengers; let i = index">
+          <span class="status" [class.checked-in]="passenger.checkedIn"></span>
+          {{ i }}: {{ passenger.fullname }}
+        </li>
+      </ul>
+
+      <h3>Airline Passengers</h3>
+      <ul>
+        <li *ngFor="let passenger of passengers; let i = index">
+          <span
+            class="status"
+            [style.background]="passenger.checkedIn ? '#2ecc71' : '#c0392b'"
+          ></span>
+          {{ i }}: {{ passenger.fullname }}
+        </li>
+      </ul>
+
+      <h3>Airline Passengers</h3>
+      <ul>
+        <li *ngFor="let passenger of passengers; let i = index">
+          <span
+            class="status"
+            [ngStyle]="{
+              background: passenger.checkedIn ? '#2ecc71' : '#c0392b'
+            }"
+          ></span>
+          {{ i }}: {{ passenger.fullname }}
+        </li>
+      </ul>
+    </div>
+  `,
+  // templateUrl: './app.component.html',
+})
+export class AppComponent {
+  passengers: Passenger[] = [
+    {
+      id: 1,
+      fullname: 'Stephen',
+      checkedIn: true,
+    },
+    {
+      id: 2,
+      fullname: 'Rose',
+      checkedIn: false,
+    },
+    {
+      id: 3,
+      fullname: 'James',
+      checkedIn: true,
+    },
+    {
+      id: 4,
+      fullname: 'Louise',
+      checkedIn: true,
+    },
+    {
+      id: 5,
+      fullname: 'Tina',
+      checkedIn: false,
+    },
+  ];
+}
+
+you dont have to handle classname and style attribute in javascript , angular will help you to achive the same in the template only so you have two directive 
+
+[ngClass]="{claas1 : expresion , claas2 : expresion2}"
+[class.background]="expresion"  
+// here [class] is not a dom property its a part of [ngClass] directive because in dom we call className for class attribute
+
+[ngStyle]="{color : expresion , background : expresion2}" 
+[style.color]="expresion" 
+
+here ngStyle is a directive where we can set multiple style dynamically , and [style] is our dom property , which we are binding there.
+
+then wyou can ask what is the diffrence between [style] and [ngStyle]
+
+[ngStyle] is an Angular directive that gives you the flexibility to do this, where as [style] is a regular HTML property to which you can only bind values one by one. That’s the difference between the two of them.
+
+for example 
+
+<div [style.color]="hasError ? 'red' : 'black' " [style.font]="font"  [style.background-color]="hasError ? 'tomato' : 'white' ">
+   The phone number you entered does not match the expected format
+</div>
+
+<div [ngStyle]="{     
+       'font-style':  this.canSave  ? 'italic' : 'normal',  
+       'color':       this.hasError ? 'red'   : 'black',     
+       'font-size':   this.hasError ? '24px'   : '12px'   
+}">
+   The phone number you entered does not match the expected format 
+</div>
+
+
+5 Pipes for data transformation
+===============================
+pipe is data transformation mechansim , these are function which angular running for us e for to do some kind of data transformation 
+
+app.component.ts
+----------------
+
+import { Component } from '@angular/core';
+
+interface Passenger {
+  id: number;
+  fullname: string;
+  checkedIn: boolean;
+  checkInDate: number | null;
+}
+
+@Component({
+  selector: 'app-root',
+  styleUrls: ['./app.component.css'],
+  template: `
+    <div class="app">
+      <h3>Airline Passengers</h3>
+      <ul>
+        <li *ngFor="let passenger of passengers; let i = index">
+          <span class="status" [class.checked-in]="passenger.checkedIn"></span>
+          {{ i }}: {{ passenger.fullname }}
+          <p>{{ passenger | json }}</p>
+          <div class="data">
+            {{
+              passenger.checkInDate
+                ? (passenger.checkInDate | date: 'yMMMMd' | uppercase)
+                : 'not checked in'
+            }}
+          </div>
+        </li>
+      </ul>
+    </div>
+  `,
+  // templateUrl: './app.component.html',
+})
+export class AppComponent {
+  passengers: Passenger[] = [
+    {
+      id: 1,
+      fullname: 'Stephen',
+      checkedIn: true,
+      checkInDate: 1490742000000,
+    },
+    {
+      id: 2,
+      fullname: 'Rose',
+      checkedIn: false,
+      checkInDate: null,
+    },
+    {
+      id: 3,
+      fullname: 'James',
+      checkedIn: true,
+      checkInDate: 1491606000000,
+    },
+    {
+      id: 4,
+      fullname: 'Louise',
+      checkedIn: true,
+      checkInDate: 1488412800000,
+    },
+    {
+      id: 5,
+      fullname: 'Tina',
+      checkedIn: false,
+      checkInDate: null,
+    },
+  ];
+}
+
+
+6 safe-navigation
+==================
+app.component.ts
+----------------
+import { Component } from '@angular/core';
+
+interface Child {
+  name: string;
+  age: number;
+}
+
+interface Passenger {
+  id: number;
+  fullname: string;
+  checkedIn: boolean;
+  checkInDate: number | null;
+  children: Child[] | null;
+}
+
+@Component({
+  selector: 'app-root',
+  styleUrls: ['./app.component.css'],
+  template: `
+    <div class="app">
+      <h3>Airline Passengers</h3>
+      <ul>
+        <li *ngFor="let passenger of passengers; let i = index">
+          <span class="status" [class.checked-in]="passenger.checkedIn"></span>
+          {{ i }}: {{ passenger.fullname }}
+          <p>{{ passenger | json }}</p>
+          <div class="data">
+            {{
+              passenger.checkInDate
+                ? (passenger.checkInDate | date: 'yMMMMd' | uppercase)
+                : 'not checked in'
+            }}
+          </div>
+          <div class="children">
+            Children:{{ passenger.children?.length || 0 }}
+          </div>
+        </li>
+      </ul>
+    </div>
+  `,
+  // templateUrl: './app.component.html',
+})
+export class AppComponent {
+  passengers: Passenger[] = [
+    {
+      id: 1,
+      fullname: 'Stephen',
+      checkedIn: true,
+      checkInDate: 1490742000000,
+      children: null,
+    },
+    {
+      id: 2,
+      fullname: 'Rose',
+      checkedIn: false,
+      checkInDate: null,
+      children: [
+        { name: 'Ted', age: 12 },
+        { name: 'Chloe', age: 7 },
+      ],
+    },
+    {
+      id: 3,
+      fullname: 'James',
+      checkedIn: true,
+      checkInDate: 1491606000000,
+      children: null,
+    },
+    {
+      id: 4,
+      fullname: 'Louise',
+      checkedIn: true,
+      checkInDate: 1488412800000,
+      children: [{ name: 'Jessica', age: 1 }],
+    },
+    {
+      id: 5,
+      fullname: 'Tina',
+      checkedIn: false,
+      checkInDate: null,
+      children: null,
+    },
+  ];
+}
+
