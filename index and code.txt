@@ -814,3 +814,557 @@ export class AppComponent {
   ];
 }
 
+****************** Component Architecture and Feature Modules ******************
+1 Smart and dumb components overview
+====================================
+2 One-way dataflow overview
+===========================
+
+3 feature modules with @NgModule
+===============================
+first create feature module folder , and module file for feature folder
+---> app/passenger-dashboard/passenger-dashboard.module.ts
+
+passenger-dashboard.module.ts
+------------------------------
+import { NgModule } from '@angular/core';
+import { BrowserModule } from '@angular/platform-browser';
+
+@NgModule({
+  declarations: [],
+  imports: [BrowserModule],
+})
+export class PassengerDashboardModule {}
+
+import { NgModule } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { BrowserModule } from '@angular/platform-browser';
+
+app.module.ts
+-------------
+// custom component
+import { AppComponent } from './app.component';
+// custom module
+import { PassengerDashboardModule } from './passenger-dashboard/passenger-dashboard.module'; <---- add thete
+
+@NgModule({
+  declarations: [AppComponent],
+  imports: [BrowserModule, FormsModule, PassengerDashboardModule], <---- add thete
+  
+  providers: [],
+  bootstrap: [AppComponent],   
+})
+export class AppModule {}
+
+
+4 Creating a container (smart) component
+----------------------------------------
+1) create a new container folder for smart component passenger-dashboard.component.ts
+---> app/passenger-dashboard/container/passenger-dashboard/passenger-dashboard.component.ts
+--->app/passenger-dashboard/container/passenger-dashboard/passenger-dashboard.component.css
+
+2) create new folder for your model means for your interface
+---> app/passenger-dashboard/container/passenger-dashboard/model/passesnger.interface.ts
+
+
+passenger-dashboard.component.ts
+-------------------------------
+import { Component } from '@angular/core';
+import { Passenger } from '../../models/passesnger.interface';
+
+@Component({
+  selector: 'passenger-dashboard',
+  styleUrls: ['./passenger-dashboard.component.css'],
+  template: `
+    <div>
+      <h3>Airline Passengers</h3>
+      <ul>
+        <li *ngFor="let passenger of passengers; let i = index">
+          <span class="status" [class.checked-in]="passenger.checkedIn"></span>
+          {{ i }}: {{ passenger.fullname }}
+          <p>{{ passenger | json }}</p>
+          <div class="data">
+            {{
+              passenger.checkInDate
+                ? (passenger.checkInDate | date: 'yMMMMd' | uppercase)
+                : 'not checked in'
+            }}
+          </div>
+          <div class="children">
+            Children:{{ passenger.children?.length || 0 }}
+          </div>
+        </li>
+      </ul>
+    </div>
+  `,
+})
+export class PassengerDashboardComponent {
+  passengers: Passenger[] = [
+    {
+      id: 1,
+      fullname: 'Stephen',
+      checkedIn: true,
+      checkInDate: 1490742000000,
+      children: null,
+    },
+    {
+      id: 2,
+      fullname: 'Rose',
+      checkedIn: false,
+      checkInDate: null,
+      children: [
+        { name: 'Ted', age: 12 },
+        { name: 'Chloe', age: 7 },
+      ],
+    },
+    {
+      id: 3,
+      fullname: 'James',
+      checkedIn: true,
+      checkInDate: 1491606000000,
+      children: null,
+    },
+    {
+      id: 4,
+      fullname: 'Louise',
+      checkedIn: true,
+      checkInDate: 1488412800000,
+      children: [{ name: 'Jessica', age: 1 }],
+    },
+    {
+      id: 5,
+      fullname: 'Tina',
+      checkedIn: false,
+      checkInDate: null,
+      children: null,
+    },
+  ];
+}
+
+
+
+passenger-dashboard.module.ts
+-----------------------------
+import { NgModule } from '@angular/core';
+import { BrowserModule } from '@angular/platform-browser';
+import { PassengerDashboardComponent } from './container/passenger-dashboard/passenger-dashboard.component';
+
+@NgModule({
+  declarations: [PassengerDashboardComponent],  <---- Add here component
+  imports: [BrowserModule],
+  // add here component in exports , becasue from this feature module , only this component will talk outside , example in our app component
+  exports: [PassengerDashboardComponent],   
+})
+export class PassengerDashboardModule {}  
+
+passenger-dashboard.component.css
+-------------------------------
+moved all passenger related css from passenger app component to here.
+
+.status {
+  width: 10px;
+  height: 10px;
+  background: #c0392b;
+  display: block;
+  margin: 8px 10px 0 0;
+  float: left;
+  border-radius: 50%;
+}
+.status.checked-in {
+  background: #2ecc71;
+}
+
+passesnger.interface.ts
+------------------------
+we creates seprate model folder for our interface so we are exporting from there , so we can access anywhere in our application
+
+export interface Child {
+  name: string;
+  age: number;
+}
+
+export interface Passenger {
+  id: number;
+  fullname: string;
+  checkedIn: boolean;
+  checkInDate: number | null;
+  children: Child[] | null;
+}
+
+app.component.ts
+----------------
+We have modified and cleaned the app component and refering  <passenger-dashboard> tag inside appcomponent. and move all code passenger related to passenger dashboard module 
+
+import { Component } from '@angular/core';
+
+@Component({
+  selector: 'app-root',
+  styleUrls: ['./app.component.css'],
+  template: `
+    <div class="app">
+      <passenger-dashboard></passenger-dashboard>    
+    </div>
+  `,
+  // templateUrl: './app.component.html',
+})
+export class AppComponent {}
+
+
+5 ngOnInit lifecycle hook
+==========================
+ngOninint is the first life cycle hooks or function which is run by angular when your component mounted or initilized.
+
+import { Component, OnInit } from '@angular/core';   <---- add here
+import { Passenger } from '../../models/passesnger.interface';
+
+@Component({
+  selector: 'passenger-dashboard',
+  styleUrls: ['./passenger-dashboard.component.css'],
+  template: `
+    <div>
+      <h3>Airline Passengers</h3>
+      <ul>
+        <li *ngFor="let passenger of passengers; let i = index">
+          <span class="status" [class.checked-in]="passenger.checkedIn"></span>
+          {{ i }}: {{ passenger.fullname }}
+          <div class="data">
+            {{
+              passenger.checkInDate
+                ? (passenger.checkInDate | date: 'yMMMMd' | uppercase)
+                : 'not checked in'
+            }}
+          </div>
+          <div class="children">
+            Children:{{ passenger.children?.length || 0 }}
+          </div>
+        </li>
+      </ul>
+    </div>
+  `,
+})
+export class PassengerDashboardComponent implements OnInit {
+  passengers: Passenger[];
+  constructor() {}
+
+  ngOnInit() {                       <---- impelemnts here
+    this.passengers = [
+      {
+        id: 1,
+        fullname: 'Stephen',
+        checkedIn: true,
+        checkInDate: 1490742000000,
+        children: null,
+      },
+      {
+        id: 2,
+        fullname: 'Rose',
+        checkedIn: false,
+        checkInDate: null,
+        children: [
+          { name: 'Ted', age: 12 },
+          { name: 'Chloe', age: 7 },
+        ],
+      },
+      {
+        id: 3,
+        fullname: 'James',
+        checkedIn: true,
+        checkInDate: 1491606000000,
+        children: null,
+      },
+      {
+        id: 4,
+        fullname: 'Louise',
+        checkedIn: true,
+        checkInDate: 1488412800000,
+        children: [{ name: 'Jessica', age: 1 }],
+      },
+      {
+        id: 5,
+        fullname: 'Tina',
+        checkedIn: false,
+        checkInDate: null,
+        children: null,
+      },
+    ];
+  }
+}
+
+6 setup Presentational (dumb) components
+================================
+Create a stateless/dumb component
+create `components folder` for them and two folder for seprate componet inside `componets folder`.
+
+app/passenger-dashboard/container/passenger-dashboard/components/passenger-count/passenger-count.component.ts
+app/passenger-dashboard/container/passenger-dashboard/components/passenger-count/passenger-details.component.ts
+
+passenger-count.component.ts
+----------------------------
+import { Component } from '@angular/core';
+
+@Component({
+  selector: 'passenger-count',
+  template: ` <div>Count component</div> `,
+})
+export class PassengerCountComponent {}
+
+
+passenger-details.component.ts
+-------------------------------
+import { Component } from '@angular/core';
+
+@Component({
+  selector: 'passenger-details',
+  template: `<div>Details Component</div>`,
+})
+export class PassengerDetailsComponent {}
+
+
+because we have created two seprate component we have to give the information to its module.
+
+passenger-dashboard.module.ts
+-------------------------------
+import { NgModule } from '@angular/core';
+import { BrowserModule } from '@angular/platform-browser';
+
+// container component
+import { PassengerDashboardComponent } from './container/passenger-dashboard/passenger-dashboard.component';
+
+// Dumb component
+import { PassengerCountComponent } from './components/passenger-count/passenger-count.component';
+import { PassengerDetailsComponent } from './components/passenger-details/passenger-detail.component';
+
+@NgModule({
+  declarations: [
+    PassengerDashboardComponent,
+    PassengerDetailsComponent,          <--- added there
+    PassengerCountComponent,   			<--- added there
+  ], 
+  imports: [BrowserModule],
+  exports: [PassengerDashboardComponent],
+})
+export class PassengerDashboardModule {}
+
+
+7 Passing data into components with @Input
+==========================================
+In previous chapter we have created own define tag, now we will create the our own property for our tag using @Input() decorators.
+
+passenger-count.component.ts
+----------------------------
+import { Component, Input } from '@angular/core';
+import { Passenger } from '../../models/passesnger.interface';
+
+@Component({
+  selector: 'passenger-count',
+    template: `
+    <div>
+      <h3>Airline Passengers</h3>
+      Total Checkedin: {{ checkedInCount() }} / {{ items.length }}
+    </div>
+  `,
+})
+export class PassengerCountComponent {
+  @Input()
+  items: Passenger[];   <-- You have created the property of your custom tag
+
+  checkedInCount() {
+    return this.items.filter((passenger) => passenger.checkedIn).length;
+  }
+}
+
+passenger-dashboard.component.ts
+-------------------------------
+import { Component, OnInit } from '@angular/core';
+import { Passenger } from '../../models/passesnger.interface';
+
+@Component({
+  selector: 'passenger-dashboard',
+  styleUrls: ['./passenger-dashboard.component.css'],
+  template: `
+    <div>
+      <h3>Airline Passengers</h3>
+      <passenger-count [items]="passengers"></passenger-count>    <-- You have bind [items] property here
+      <passenger-details></passenger-details>
+      <ul>
+        <li *ngFor="let passenger of passengers; let i = index">
+          <span class="status" [class.checked-in]="passenger.checkedIn"></span>
+          {{ i }}: {{ passenger.fullname }}
+          <div class="data">
+            {{
+              passenger.checkInDate
+                ? (passenger.checkInDate | date: 'yMMMMd' | uppercase)
+                : 'not checked in'
+            }}
+          </div>
+          <div class="children">
+            Children:{{ passenger.children?.length || 0 }}
+          </div>
+        </li>
+      </ul>
+    </div>
+  `,
+})
+export class PassengerDashboardComponent implements OnInit {
+  passengers: Passenger[];
+  constructor() {}
+
+  ngOnInit() {
+    this.passengers = [
+      {
+        id: 1,
+        fullname: 'Stephen',
+        checkedIn: true,
+        checkInDate: 1490742000000,
+        children: null,
+      },
+      {
+        id: 2,
+        fullname: 'Rose',
+        checkedIn: false,
+        checkInDate: null,
+        children: [
+          { name: 'Ted', age: 12 },
+          { name: 'Chloe', age: 7 },
+        ],
+      },
+      {
+        id: 3,
+        fullname: 'James',
+        checkedIn: true,
+        checkInDate: 1491606000000,
+        children: null,
+      },
+      {
+        id: 4,
+        fullname: 'Louise',
+        checkedIn: true,
+        checkInDate: 1488412800000,
+        children: [{ name: 'Jessica', age: 1 }],
+      },
+      {
+        id: 5,
+        fullname: 'Tina',
+        checkedIn: false,
+        checkInDate: null,
+        children: null,
+      },
+    ];
+  }
+}
+
+8 dynamic-input-ngfor 
+==========================
+we can apply ngFor with component as well , and now we are going to implement custom detail property for passenger-details component, and we will apply ng-for , with cusom component.
+
+create a new css file for  passenger-detail.component.ts (passenger-detail.component.css), becasue now we have to move css from passenger-dashboard.component.ts to passenger-detail.component.ts 
+
+
+passenger-detail.component.ts
+-----------------------------
+import { Component, Input } from '@angular/core';
+import { Passenger } from '../../models/passesnger.interface';
+
+@Component({
+  selector: 'passenger-details',
+  styleUrls: ['./passenger-detail.component.css'],
+  template: `<div>
+    <span class="status" [class.checked-in]="detail.checkedIn"></span>
+    {{ detail.fullname }}
+    <div class="data">
+      {{
+        detail.checkInDate
+          ? (detail.checkInDate | date: 'yMMMMd' | uppercase)
+          : 'not checked in'
+      }}
+    </div>
+    <div class="children">Children:{{ detail.children?.length || 0 }}</div>
+  </div>`,
+})
+export class PassengerDetailsComponent {
+  @Input()              
+  detail: Passenger;    <----- custom detail property created for <passenger-details> tag.
+
+
+
+passenger-dashboard.component.ts
+----------------------------------
+import { Component, OnInit } from '@angular/core';
+import { Passenger } from '../../models/passesnger.interface';
+
+@Component({
+  selector: 'passenger-dashboard',
+  styleUrls: ['./passenger-dashboard.component.css'],
+  template: `
+    <div>
+      <passenger-count [items]="passengers"></passenger-count>
+      <passenger-details
+        *ngFor="let passenger of passengers"              <----- dunamic input property with ngFOr
+        [detail]="passenger"
+      ></passenger-details>
+    </div>
+  `,
+})
+export class PassengerDashboardComponent implements OnInit {
+  passengers: Passenger[];
+  constructor() {}
+
+  ngOnInit() {
+    this.passengers = [
+      {
+        id: 1,
+        fullname: 'Stephen',
+        checkedIn: true,
+        checkInDate: 1490742000000,
+        children: null,
+      },
+      {
+        id: 2,
+        fullname: 'Rose',
+        checkedIn: false,
+        checkInDate: null,
+        children: [
+          { name: 'Ted', age: 12 },
+          { name: 'Chloe', age: 7 },
+        ],
+      },
+      {
+        id: 3,
+        fullname: 'James',
+        checkedIn: true,
+        checkInDate: 1491606000000,
+        children: null,
+      },
+      {
+        id: 4,
+        fullname: 'Louise',
+        checkedIn: true,
+        checkInDate: 1488412800000,
+        children: [{ name: 'Jessica', age: 1 }],
+      },
+      {
+        id: 5,
+        fullname: 'Tina',
+        checkedIn: false,
+        checkInDate: null,
+        children: null,
+      },
+    ];
+  }
+}
+
+
+passenger-detail.component.css
+----------------------------------
+.status {
+  width: 10px;
+  height: 10px;
+  background: #c0392b;
+  display: block;
+  margin: 8px 10px 0 0;
+  float: left;
+  border-radius: 50%;
+}
+.status.checked-in {
+  background: #2ecc71;
+}
