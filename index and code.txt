@@ -1368,3 +1368,443 @@ passenger-detail.component.css
 .status.checked-in {
   background: #2ecc71;
 }
+
+9 Emitting changes with @Output and EventEmitter
+-----------------------------------------------
+How we have created property uisng @Input() , decorator , same way we can create event property using @Output() decorator , and we need one more thing that is calledd EventEmitter , this is a constructor function , and this function constructor object will be assigned to @Output Property 
+
+for example
+----------
+import { Component, Input, Output, EventEmitter } from '@angular/core';
+
+@Component({
+  selector: 'custom-tag',
+  styleUrls: ['./passenger-detail.component.css'],
+  template: `Hello`
+})
+class CustomTagComponent {
+	
+@Input()
+customProp;
+
+@Output()
+onCustomEvent:EventEmitter<any> = new EventEmitter()
+}
+
+
+passenger-detail.component.ts
+-----------------------------
+
+import { Component, Input, Output, EventEmitter } from '@angular/core'; <-- import here @Output() and EventEmitter
+
+import { Passenger } from '../../models/passesnger.interface';
+
+@Component({
+  selector: 'passenger-details',
+  styleUrls: ['./passenger-detail.component.css'],
+  template: `<div>
+    <div>{{ detail | json }}</div>
+    <span class="status" [class.checked-in]="detail.checkedIn"></span>
+
+    <div *ngIf="editing">
+      <input
+        type="text"
+        #name
+        [value]="detail.fullname"
+        (input)="onNameChange(name.value)"
+      />
+    </div>
+
+    <div *ngIf="!editing">
+      {{ detail.fullname }}
+    </div>
+
+    <div class="data">
+      {{
+        detail.checkInDate
+          ? (detail.checkInDate | date: 'yMMMMd' | uppercase)
+          : 'not checked in'
+      }}
+    </div>
+
+    <div class="children">Children:{{ detail.children?.length || 0 }}</div>
+
+    <button (click)="toggleEdit()">{{ editing ? 'Done' : 'Edit' }}</button>
+    <button (click)="onRemove()">Remove</button>
+  </div>`,
+})
+export class PassengerDetailsComponent {
+  @Input()
+  detail: Passenger;
+
+  @Output()
+  onEdit: EventEmitter<any> = new EventEmitter();     <-- creating here component event property
+
+  @Output()
+  onDelete: EventEmitter<any> = new EventEmitter();   <-- creating here component event property
+
+  editing: boolean = false;
+
+  onNameChange(value: string) {
+    this.detail.fullname = value;
+  }
+
+  toggleEdit() {
+    if (this.editing) {
+      this.onEdit.emit(this.detail);
+    }
+
+    this.editing = !this.editing;
+  }
+
+  onRemove() {
+    this.onDelete.emit(this.detail);
+  }
+}
+
+
+passenger-dashboard.component.ts
+-------------------------------
+import { Component, OnInit } from '@angular/core';
+import { Passenger } from '../../models/passesnger.interface';
+
+@Component({
+  selector: 'passenger-dashboard',
+  styleUrls: ['./passenger-dashboard.component.css'],
+  template: `
+    <div>
+      <passenger-count [items]="passengers"></passenger-count>
+      <passenger-details
+        *ngFor="let passenger of passengers"
+        [detail]="passenger"
+        (onEdit)="onEditHandler($event)"
+        (onDelete)="onDeleteHandler($event)"
+      ></passenger-details>
+    </div>
+  `,
+})
+export class PassengerDashboardComponent implements OnInit {
+  passengers: Passenger[];
+  constructor() {}
+
+  ngOnInit() {
+    this.passengers = [
+      {
+        id: 1,
+        fullname: 'Stephen',
+        checkedIn: true,
+        checkInDate: 1490742000000,
+        children: null,
+      },
+      {
+        id: 2,
+        fullname: 'Rose',
+        checkedIn: false,
+        checkInDate: null,
+        children: [
+          { name: 'Ted', age: 12 },
+          { name: 'Chloe', age: 7 },
+        ],
+      },
+      {
+        id: 3,
+        fullname: 'James',
+        checkedIn: true,
+        checkInDate: 1491606000000,
+        children: null,
+      },
+      {
+        id: 4,
+        fullname: 'Louise',
+        checkedIn: true,
+        checkInDate: 1488412800000,
+        children: [{ name: 'Jessica', age: 1 }],
+      },
+      {
+        id: 5,
+        fullname: 'Tina',
+        checkedIn: false,
+        checkInDate: null,
+        children: null,
+      },
+    ];
+  }
+
+  onEditHandler(event: any) {
+    console.log(event);
+  }
+
+  onDeleteHandler(event: any) {
+    console.log(event);
+  }
+}
+
+
+
+10 Immutable state changes, implement edit and delete passenger in immutable way.
+--------------------------------------------------------------------------------
+passenger-dashboard.component.ts
+-------------------------------
+import { Component, OnInit } from '@angular/core';
+import { Passenger } from '../../models/passesnger.interface';
+
+@Component({
+  selector: 'passenger-dashboard',
+  styleUrls: ['./passenger-dashboard.component.css'],
+  template: `
+    <div>
+      <passenger-count [items]="passengers"></passenger-count>
+      <passenger-details
+        *ngFor="let passenger of passengers"
+        [detail]="passenger"
+        (onEdit)="onEditHandler($event)"
+        (onDelete)="onDeleteHandler($event)"
+      ></passenger-details>
+    </div>
+  `,
+})
+export class PassengerDashboardComponent implements OnInit {
+  passengers: Passenger[];
+  constructor() {}
+
+  ngOnInit() {
+    this.passengers = [
+      {
+        id: 1,
+        fullname: 'Stephen',
+        checkedIn: true,
+        checkInDate: 1490742000000,
+        children: null,
+      },
+      {
+        id: 2,
+        fullname: 'Rose',
+        checkedIn: false,
+        checkInDate: null,
+        children: [
+          { name: 'Ted', age: 12 },
+          { name: 'Chloe', age: 7 },
+        ],
+      },
+      {
+        id: 3,
+        fullname: 'James',
+        checkedIn: true,
+        checkInDate: 1491606000000,
+        children: null,
+      },
+      {
+        id: 4,
+        fullname: 'Louise',
+        checkedIn: true,
+        checkInDate: 1488412800000,
+        children: [{ name: 'Jessica', age: 1 }],
+      },
+      {
+        id: 5,
+        fullname: 'Tina',
+        checkedIn: false,
+        checkInDate: null,
+        children: null,
+      },
+    ];
+  }
+
+  onEditHandler(event: Passenger) {
+    this.passengers = this.passengers.map((passenger: Passenger) => {
+      if (passenger.id === event.id) {
+        passenger = { ...event };
+      }
+
+      return passenger;
+    });
+    console.log(this.passengers);
+  }
+
+  onDeleteHandler(event: Passenger) {
+    this.passengers = this.passengers.filter((passenger: Passenger) => {
+      return passenger.id !== event.id;
+    });
+    console.log(this.passengers);
+  }
+}
+
+
+11 ngOnChanges lifecycle hook
+==============================
+ngOnChanges(changes:simpleChanges){} , is a life cycle hooks which runs before ngOnInit() life cycle hooks , and changes object is about all @Input() property listed in this changes object where we can see previousValue and currentValue , so suppose whenever value will be changed of @Input() property from parent component , this ngOnChanges life cycle hooks will be triggred , and you can get updated value of @input() property.
+
+
+passenger-dashboard.component.ts
+-------------------------------
+import { Component, OnInit } from '@angular/core';
+import { Passenger } from '../../models/passesnger.interface';
+
+@Component({
+  selector: 'passenger-dashboard',
+  styleUrls: ['./passenger-dashboard.component.css'],
+  template: `
+    <div>
+      <passenger-count [items]="passengers"></passenger-count>
+      <p *ngFor="let passenger of passengers">{{ passenger.fullname }}</p>
+      <passenger-details
+        *ngFor="let passenger of passengers"
+        [detail]="passenger"
+        (onEdit)="onEditHandler($event)"
+        (onDelete)="onDeleteHandler($event)"
+      ></passenger-details>
+    </div>
+  `,
+})
+export class PassengerDashboardComponent implements OnInit {
+  passengers: Passenger[];
+  constructor() {}
+
+  ngOnInit() {
+    this.passengers = [
+      {
+        id: 1,
+        fullname: 'Stephen',
+        checkedIn: true,
+        checkInDate: 1490742000000,
+        children: null,
+      },
+      {
+        id: 2,
+        fullname: 'Rose',
+        checkedIn: false,
+        checkInDate: null,
+        children: [
+          { name: 'Ted', age: 12 },
+          { name: 'Chloe', age: 7 },
+        ],
+      },
+      {
+        id: 3,
+        fullname: 'James',
+        checkedIn: true,
+        checkInDate: 1491606000000,
+        children: null,
+      },
+      {
+        id: 4,
+        fullname: 'Louise',
+        checkedIn: true,
+        checkInDate: 1488412800000,
+        children: [{ name: 'Jessica', age: 1 }],
+      },
+      {
+        id: 5,
+        fullname: 'Tina',
+        checkedIn: false,
+        checkInDate: null,
+        children: null,
+      },
+    ];
+  }
+
+  onEditHandler(event: Passenger) {
+    this.passengers = this.passengers.map((passenger: Passenger) => {
+      if (passenger.id === event.id) {
+        passenger = { ...event };
+      }
+
+      return passenger;
+    });
+  }
+
+  onDeleteHandler(event: Passenger) {
+    this.passengers = this.passengers.filter((passenger: Passenger) => {
+      return passenger.id !== event.id;
+    });
+  }
+}
+
+passenger-detail.component.ts
+------------------------------
+import {
+  Component,
+  Input,
+  Output,
+  EventEmitter,
+  OnChanges,
+  OnInit,
+} from '@angular/core';
+
+import { Passenger } from '../../models/passesnger.interface';
+
+@Component({
+  selector: 'passenger-details',
+  styleUrls: ['./passenger-detail.component.css'],
+  template: `<div>
+    <span class="status" [class.checked-in]="detail.checkedIn"></span>
+
+    <div *ngIf="editing">
+      <input
+        type="text"
+        #name
+        [value]="detail.fullname"
+        (input)="onNameChange(name.value)"
+      />
+    </div>
+
+    <div *ngIf="!editing">
+      {{ detail.fullname }}
+    </div>
+
+    <div class="data">
+      {{
+        detail.checkInDate
+          ? (detail.checkInDate | date: 'yMMMMd' | uppercase)
+          : 'not checked in'
+      }}
+    </div>
+
+    <div class="children">Children:{{ detail.children?.length || 0 }}</div>
+
+    <button (click)="toggleEdit()">{{ editing ? 'Done' : 'Edit' }}</button>
+    <button (click)="onRemove()">Remove</button>
+  </div>`,
+})
+export class PassengerDetailsComponent implements OnChanges, OnInit {
+  @Input()
+  detail: Passenger;
+
+  @Output()
+  onEdit: EventEmitter<any> = new EventEmitter();
+
+  @Output()
+  onDelete: EventEmitter<any> = new EventEmitter();
+
+  ngOnChanges(changes) {
+    if (changes.detail) {
+      this.detail = { ...changes.detail.currentValue };
+    }
+    console.log('ngOnChanges');
+  }
+
+  ngOnInit() {
+    console.log('ngOnInit');
+  }
+
+  editing: boolean = false;
+
+  onNameChange(value: string) {
+    this.detail.fullname = value;
+  }
+
+  toggleEdit() {
+    if (this.editing) {
+      this.onEdit.emit(this.detail);
+    }
+
+    this.editing = !this.editing;
+  }
+
+  onRemove() {
+    this.onDelete.emit(this.detail);
+  }
+}
+
+
+

@@ -1,4 +1,11 @@
-import { Component, Input } from '@angular/core';
+import {
+  Component,
+  Input,
+  Output,
+  EventEmitter,
+  OnInit,
+  OnChanges,
+} from '@angular/core';
 import { Passengers } from '../../model/passenger.interface';
 
 @Component({
@@ -6,7 +13,18 @@ import { Passengers } from '../../model/passenger.interface';
   styleUrls: ['./passenger-detail.component.css'],
   template: `<div>
     <span class="status" [class.checked-in]="detail.checkedIn"></span>
-    {{ detail.fullname }}
+
+    <div>
+      <input
+        *ngIf="editing"
+        type="text"
+        [value]="detail.fullname"
+        #name
+        (input)="onNameChange(name.value)"
+      />
+    </div>
+
+    <div *ngIf="!editing">{{ detail.fullname }}</div>
 
     <div class="date">
       {{
@@ -19,9 +37,44 @@ import { Passengers } from '../../model/passenger.interface';
     <div class="children">
       {{ detail.children?.length || 0 }}
     </div>
+
+    <button (click)="toggleEdit()">{{ editing ? 'Done' : 'Edit' }}</button>
+    <button (click)="onRemove()">Remove</button>
   </div>`,
 })
-export class PassengerDetailComponent {
+export class PassengerDetailComponent implements OnInit, OnChanges {
   @Input()
   detail: Passengers;
+
+  @Output()
+  onEdit = new EventEmitter();
+
+  @Output()
+  onDelete = new EventEmitter();
+
+  editing: boolean = false;
+
+  ngOnInit(): void {
+    //console.log('ngOnInit()');
+  }
+
+  ngOnChanges(changes: any): void {
+    this.detail = { ...changes.detail.currentValue };
+  }
+
+  onNameChange(value: string) {
+    this.detail.fullname = value;
+  }
+
+  toggleEdit() {
+    if (this.editing) {
+      this.onEdit.emit(this.detail);
+    }
+
+    this.editing = !this.editing;
+  }
+
+  onRemove() {
+    this.onDelete.emit(this.detail);
+  }
 }
