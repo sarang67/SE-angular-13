@@ -5,7 +5,7 @@ import { Passengers } from '../../model/passenger.interface';
   selector: 'passenger-count',
   template: `<div>
     <h3>Airlines passengers</h3>
-    Total CheckedIn:{{ checkedInCount() }} / {{ items.length }}
+    Total CheckedIn:{{ checkedInCount() }} / {{ items?.length }}
   </div>`,
 })
 export class PassengerCountComponent {
