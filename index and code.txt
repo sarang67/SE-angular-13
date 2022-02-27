@@ -679,7 +679,7 @@ interface Passenger {
           <div class="data">
             {{
               passenger.checkInDate
-                ? (passenger.checkInDate | date: 'yMMMMd' | uppercase)
+                ? (passenger.checkInDate | date: 'yMMMMd':  | uppercase)
                 : 'not checked in'
             }}
           </div>
@@ -690,6 +690,7 @@ interface Passenger {
   // templateUrl: './app.component.html',
 })
 export class AppComponent {
+  
   passengers: Passenger[] = [
     {
       id: 1,
@@ -1803,6 +1804,515 @@ export class PassengerDetailsComponent implements OnChanges, OnInit {
 
   onRemove() {
     this.onDelete.emit(this.detail);
+  }
+}
+
+**************Services, Http and Observables************
+Services are singelton pattern in angular means one service objet is shared all are the places (component).
+
+
+1 Data Services and Dependency Injection
+--------------------------------------
+create a new service passenger-dashboard.service (passenger-dashboard.service) inside
+
+src\app\passenger-dashboard\passenger-dashboard.service
+
+passenger-dashboard.service
+-----------------------------
+import { Passenger } from './models/passesnger.interface';
+
+export class PassengerDashboardService {
+  constructor() {}
+
+  getPassengers(): Passenger[] {
+    return [
+      {
+        id: 1,
+        fullname: 'Stephen',
+        checkedIn: true,
+        checkInDate: 1490742000000,
+        children: null,
+      },
+      {
+        id: 2,
+        fullname: 'Rose',
+        checkedIn: false,
+        checkInDate: null,
+        children: [
+          { name: 'Ted', age: 12 },
+          { name: 'Chloe', age: 7 },
+        ],
+      },
+      {
+        id: 3,
+        fullname: 'James',
+        checkedIn: true,
+        checkInDate: 1491606000000,
+        children: null,
+      },
+      {
+        id: 4,
+        fullname: 'Louise',
+        checkedIn: true,
+        checkInDate: 1488412800000,
+        children: [{ name: 'Jessica', age: 1 }],
+      },
+      {
+        id: 5,
+        fullname: 'Tina',
+        checkedIn: false,
+        checkInDate: null,
+        children: null,
+      },
+    ];
+  }
+}
+
+Passenger-dashboard.module.ts
+-------------------------
+
+import { NgModule } from '@angular/core';
+import { BrowserModule } from '@angular/platform-browser';
+
+// container component
+import { PassengerDashboardComponent } from './container/passenger-dashboard/passenger-dashboard.component';
+
+// Dumb component
+import { PassengerCountComponent } from './components/passenger-count/passenger-count.component';
+import { PassengerDetailsComponent } from './components/passenger-details/passenger-detail.component';
+
+// service
+import { PassengerDashboardService } from './passenger-dashboard.service';
+
+@NgModule({
+  declarations: [
+    PassengerDashboardComponent,
+    PassengerDetailsComponent,
+    PassengerCountComponent,
+  ],
+  imports: [BrowserModule],
+  exports: [PassengerDashboardComponent],
+  providers: [PassengerDashboardService],   <--- added here, it means this will server to all declration component
+})
+export class PassengerDashboardModule {}
+
+
+
+Passenger-dashboard.component.ts
+-------------------------------
+
+import { Component, OnInit } from '@angular/core';
+import { Passenger } from '../../models/passesnger.interface';
+import { PassengerDashboardService } from '../../passenger-dashboard.service';
+
+@Component({
+  selector: 'passenger-dashboard',
+  styleUrls: ['./passenger-dashboard.component.css'],
+  template: `
+    <div>
+      <passenger-count [items]="passengers"></passenger-count>
+      <p *ngFor="let passenger of passengers">{{ passenger.fullname }}</p>
+      <passenger-details
+        *ngFor="let passenger of passengers"
+        [detail]="passenger"
+        (onEdit)="onEditHandler($event)"
+        (onDelete)="onDeleteHandler($event)"
+      ></passenger-details>
+    </div>
+  `,
+})
+export class PassengerDashboardComponent implements OnInit {
+  passengers: Passenger[];
+  // angular will inject the service singelton object for you there
+  constructor(private passengerService: PassengerDashboardService) {}   <--- injected service there
+
+  ngOnInit() {
+    console.log(this.passengerService);
+    this.passengers = this.passengerService.getPassengers(); <--- used service there
+  }
+
+  onEditHandler(event: Passenger) {
+    this.passengers = this.passengers.map((passenger: Passenger) => {
+      if (passenger.id === event.id) {
+        passenger = { ...event };
+      }
+
+      return passenger;
+    });
+  }
+
+  onDeleteHandler(event: Passenger) {
+    this.passengers = this.passengers.filter((passenger: Passenger) => {
+      return passenger.id !== event.id;
+    });
+  }
+}
+
+
+2 Understanding @Injectable
+===========================
+when ypu want to use other service inside your service that time this is compulsery , that you have to add @Injectable() decorator with service , and you can tell there on which level you want to provide the service so in this decorator we give the parameter `providedIn: 'root'` it means this service will provide to all the places means it is available on root level.
+
+SO good practice says you whould always use @Injectable() with the services , and this is compulsery when other servicees inside to inject in your services for example http service.  so no matter other services are injected or not in your services you should always use the @injectable
+
+you should use @Injectable({ providedIn: 'root' }) with service in that case you dont have to register service in Provider array in module.
+
+
+src\app\passenger-dashboard\passenger-dashboard.service.ts
+------------------------------------------------------
+
+import { Injectable } from '@angular/core';
+import { Passengers } from './model/passenger.interface';
+import { HttpClient } from '@angular/common/http';
+
+@Injectable({ providedIn: 'root' })
+export class PassengerDashboardService {
+  constructor(private http: HttpClient) {  <--- inject another service in our service
+    console.log(this.http);   
+  }
+
+  getPassengers(): Passengers[] {
+    return [
+      {
+        id: 1,
+        fullname: 'Stephen',
+        checkedIn: true,
+        checkInDate: 1490742000000,
+        children: null,
+      },
+      {
+        id: 2,
+        fullname: 'Rose',
+        checkedIn: false,
+        checkInDate: null,
+        children: [
+          { name: 'Ted', age: 12 },
+          { name: 'Chloe', age: 7 },
+        ],
+      },
+      {
+        id: 3,
+        fullname: 'James',
+        checkedIn: true,
+        checkInDate: 1491606000000,
+        children: null,
+      },
+      {
+        id: 4,
+        fullname: 'Louise',
+        checkedIn: true,
+        checkInDate: 1488412800000,
+        children: [{ name: 'Jessica', age: 1 }],
+      },
+      {
+        id: 5,
+        fullname: 'Tina',
+        checkedIn: false,
+        checkInDate: null,
+        children: null,
+      },
+    ];
+  }
+}
+
+src\app\passenger-dashboard\passenger-dashboard.module.ts
+--------------------------------------------------------
+import { NgModule } from '@angular/core';
+import { BrowserModule } from '@angular/platform-browser';
+
+import { HttpClientModule } from '@angular/common/http'; <-- mosule for http service
+
+// container/ smart/ presentational
+import { PassengerDashboardComponent } from './container/passenger-dashboard/passenger-dashboard.component';
+
+// dumb component
+import { PassengerCountComponent } from './components/passenger-count/passenger-count.component';
+import { PassengerDetailComponent } from './components/passenger-details/passenger-detail.component';
+import { PassengerDashboardService } from './passenger-dashboard.service';
+
+@NgModule({
+  declarations: [
+    // container/ smart component
+    PassengerDashboardComponent,
+    // dumb component
+    PassengerCountComponent,
+    PassengerDetailComponent,
+  ],
+  // here we added HttpClientModule for usiing http service in our application
+  imports: [BrowserModule, HttpClientModule], 
+  exports: [PassengerDashboardComponent],
+  // no need for provider becasue we are usng @Injectable({ providedIn: 'root' }) in the service. it means this service provided to root lavel by angular
+  //providers: [PassengerDashboardService],  
+})
+export class PassengerDashboardModule {}
+
+
+
+3 Http data fetching with Observables
+======================================
+in angular we do use rxjs lib whis is observable based so when we have to need any result from observable we have to subscibe for it , we dont use promise based api in angular, so here we have to consume only observale
+
+example for using observable
+-------------------------
+var request = doApiCall() // in agular http call givex observable so you have to subscribe for it
+
+request.subscibe(
+	(data)=>{
+		console.log(data)
+	},
+	(error)=>{
+		console.log(error)
+	},
+)
+
+
+set the fake json server from  https://www.npmjs.com/package/json-server
+
+Stpes to setup :-
+-------
+1) npm install -g json-server
+2) json-server --watch db.json
+3) your db,json file will be created and update the file with below endpoin
+
+db.json
+-------
+{
+  "passengers": [
+    {
+      "id": 1,
+      "fullname": "Steve",
+      "checkedIn": true,
+      "checkInDate": 1490742000000,
+      "children": null
+    },
+    {
+      "id": 2,
+      "fullname": "Rose",
+      "checkedIn": false,
+      "checkInDate": null,
+      "children": [
+        {
+          "name": "Ted",
+          "age": 12
+        },
+        {
+          "name": "Chloe",
+          "age": 7
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "fullname": "Louise",
+      "checkedIn": true,
+      "checkInDate": 1488412800000,
+      "children": [
+        {
+          "name": "Jessica",
+          "age": 1
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "fullname": "Tina",
+      "checkedIn": false,
+      "checkInDate": null,
+      "children": null
+    }
+  ]
+}
+
+passenger-dashboard.component.ts
+------------------------------
+import { Component, OnInit } from '@angular/core';
+import { Passengers } from '../../model/passenger.interface';
+import { PassengerDashboardService } from '../../passenger-dashboard.service';
+
+@Component({
+  selector: 'passenger-dashboard',
+  styleUrls: ['./passenger-dashboard.component.css'],
+  template: `
+    <div>
+      <passenger-count [items]="passengers"></passenger-count>
+
+      <passenger-detail
+        *ngFor="let passenger of passengers"
+        [detail]="passenger"
+        (onEdit)="onEditHandler($event)"
+        (onDelete)="onDeleteHandler($event)"
+      >
+      </passenger-detail>
+    </div>
+  `,
+})
+export class PassengerDashboardComponent implements OnInit {
+  passengers: Passengers[] = [];  <-- inilize with empty array
+  constructor(private passengerDashboardService: PassengerDashboardService) {}
+
+  ngOnInit() {
+    this.passengerDashboardService
+      .getPassengers()           <-- this will give observable, then we have to subscribe the result
+      .subscribe((data: Passengers[]) => {
+        this.passengers = data;
+      });
+  }
+
+  onEditHandler(event: Passengers) {
+    this.passengers = this.passengers.map((passenger) => {
+      if (passenger.id === event.id) {
+        passenger = { ...event };
+      }
+      return passenger;
+    });
+  }
+
+  onDeleteHandler(event: Passengers) {
+    this.passengers = this.passengers.filter((passenger) => {
+      return passenger.id !== event.id;
+    });
+  }
+}
+
+4 Http put, delete with immutable state
+---------------------------------------
+we have implemented get request now we will work on update and delete request , we already implemented edit passenger and delete passenger in our smart component in the browser memory , but now we will perform as a server call.
+
+
+passenger-dashboard.service.ts
+-------------------------------
+import { Injectable } from '@angular/core';
+import { Passengers } from './model/passenger.interface';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+
+const PASSENGER_API: string = 'http://localhost:3000/passengers';
+
+@Injectable({ providedIn: 'root' })
+export class PassengerDashboardService {
+  constructor(private http: HttpClient) {
+    console.log(this.http);
+  }
+
+
+  getPassengers(): Observable<Object> {
+    return this.http.get(PASSENGER_API);  <-- http get request
+  }
+
+  updatePassenger(passenger: Passengers): Observable<Object> {
+    return this.http.put(`${PASSENGER_API}/${passenger.id}`, passenger); <-- http put request
+  }
+
+  removePassenger(passenger: Passengers): Observable<Object> {
+    return this.http.delete(`${PASSENGER_API}/${passenger.id}`); <-- http delete request
+  }
+}
+
+passenger-dashboard.component.ts
+---------------------------------
+we will implement sbove mentioned method in the smart component.
+
+import { Component, OnInit } from '@angular/core';
+import { Passengers } from '../../model/passenger.interface';
+import { PassengerDashboardService } from '../../passenger-dashboard.service';
+
+@Component({
+  selector: 'passenger-dashboard',
+  styleUrls: ['./passenger-dashboard.component.css'],
+  template: `
+    <div>
+      <passenger-count [items]="passengers"></passenger-count>
+
+      <passenger-detail
+        *ngFor="let passenger of passengers"
+        [detail]="passenger"
+        (onEdit)="onEditHandler($event)"
+        (onDelete)="onDeleteHandler($event)"
+      >
+      </passenger-detail>
+    </div>
+  `,
+})
+export class PassengerDashboardComponent implements OnInit {
+  passengers: Passengers[] = [];
+  constructor(private passengerDashboardService: PassengerDashboardService) {}
+
+  ngOnInit() {
+    // get the passenger ushing passengerDashboardService.getPassengers()
+    this.passengerDashboardService
+      .getPassengers()
+      .subscribe((data: Passengers[]) => {
+        this.passengers = data;
+      });
+  }
+
+  onEditHandler(event: Passengers) {
+    // update(put) the passenger ushing passengerDashboardService.updatePassenger()
+    this.passengerDashboardService.updatePassenger(event).subscribe((data) => {
+      // console.log(data);
+
+      this.passengers = this.passengers.map((passenger) => {
+        if (passenger.id === event.id) {
+          passenger = { ...event };
+        }
+        return passenger;
+      });
+    });
+  }
+
+  onDeleteHandler(event: Passengers) {
+    // delete  the passenger ushing passengerDashboardService.removePassenger()
+    this.passengerDashboardService.removePassenger(event).subscribe((data) => {
+      //console.log(data);
+
+      this.passengers = this.passengers.filter((passenger) => {
+        return passenger.id !== event.id;
+      });
+    });
+  }
+}
+
+
+5 Custom Headers and RequestOptions
+====================================
+when you work in real application you hve to set your headers , while make any request , there could be multiple reason like set authentication key , compulsery extra headers , some headers for your cross origin fix , so you can create and make option like below and set as a last parameter of any request , and you can see in network tab they are working
+
+import { Injectable } from '@angular/core';
+import { Passengers } from './model/passenger.interface';
+import { HttpClient, HttpHeaders } from '@angular/common/http';  <------ import HttpHeaders object there 
+import { Observable } from 'rxjs';
+
+const PASSENGER_API: string = 'http://localhost:3000/passengers';
+
+passenger-dashboard.service.ts
+-------------------------------
+const httpOptions = {                <------ create the options object for your http methods
+  headers: new HttpHeaders({          <------ construct HttpHeaders object there 
+    'Content-Type': 'application/json',
+    'x-authorization-code': 'my-auth-token',
+  }),
+};
+
+@Injectable({ providedIn: 'root' })
+export class PassengerDashboardService {
+  constructor(private http: HttpClient) {
+    console.log(this.http);
+  }
+
+  getPassengers(): Observable<Object> {
+    return this.http.get(PASSENGER_API, httpOptions);
+  }
+
+  updatePassenger(passenger: Passengers): Observable<Object> {
+    return this.http.put(
+      `${PASSENGER_API}/${passenger.id}`,
+      passenger,
+      httpOptions
+    );
+  }
+
+  removePassenger(passenger: Passengers): Observable<Object> {
+    return this.http.delete(`${PASSENGER_API}/${passenger.id}`, httpOptions);
   }
 }
 
