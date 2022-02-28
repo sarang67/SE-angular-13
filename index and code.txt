@@ -2318,3 +2318,529 @@ export class PassengerDashboardService {
 
 
 
+***************** Template-driven Forms, Inputs and Validation******************
+
+1 Forms container component (passenger-viewer.component.ts)
+-------------------------------------------------------
+create a new smart container component for passenger-viwer component , this will show a single passenger.
+
+src\app\passenger-dashboard\container\passenger-viewer\passenger-viewer.component.ts
+
+
+
+passenger-viewer.component.ts
+-----------------------------
+import { Component, OnInit } from '@angular/core';
+import { Passengers } from '../../model/passenger.interface';
+import { PassengerDashboardService } from '../../passenger-dashboard.service';
+
+@Component({
+  selector: 'passenger-viewer',
+  styleUrls: ['./passenger-viewer.component.css'],
+  template: ` <div>{{ passenger | json }}</div> `,    <--- this will show a passenger object here on screen 
+})
+export class PassengerViewerComponent implements OnInit {
+  passenger: Passengers;
+
+  constructor(private passengerService: PassengerDashboardService) {}
+  ngOnInit() {   
+    this.passengerService.getPassenger(1).subscribe((passenger: Passengers) => {    
+      this.passenger = passenger;   <--- this will make a single passenger api call and assign in passenger object
+    });
+  }
+}
+
+
+passenger-dashboard.service.ts
+--------------------------------
+import { Injectable } from '@angular/core';
+import { Passengers } from './model/passenger.interface';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Observable } from 'rxjs';
+
+const PASSENGER_API: string = 'http://localhost:3000/passengers';
+
+const httpOption = {
+  headers: new HttpHeaders({
+    Pragma: 'private',
+    'Content-Type': 'application/json',
+    'x-authentication-cod': 'my auhhenticcation key',
+  }),
+};
+
+@Injectable({ providedIn: 'root' })
+export class PassengerDashboardService {
+  constructor(private http: HttpClient) {
+    console.log(this.http);
+  }
+
+  getPassengers(): Observable<any> {   
+    return this.http.get(PASSENGER_API, httpOption);
+  }
+
+  getPassenger(id): Observable<any> {
+    return this.http.get(`${PASSENGER_API}/${id}`);   <--- Add a another new method there to fetch single passenger
+  }
+
+  updatePassenger(passenger: Passengers) {
+    return this.http.put(
+      `${PASSENGER_API}/${passenger.id}`,
+      passenger,
+      httpOption
+    );
+  }
+
+  removePassenger(passenger: Passengers) {
+    return this.http.delete(`${PASSENGER_API}/${passenger.id}`, httpOption);
+  }
+}
+
+
+passenger-dashboard.module.ts
+-----------------------------
+register in passenger dashboard module , and add in exports array , temporary purpose we want to show in our main app 
+
+import { NgModule } from '@angular/core';
+import { BrowserModule } from '@angular/platform-browser';
+import { HttpClientModule } from '@angular/common/http';
+
+// container/ smart/ presentational
+import { PassengerDashboardComponent } from './container/passenger-dashboard/passenger-dashboard.component';
+import { PassengerViewerComponent } from './container/passenger-viewer/passenger-viewer.component';
+
+// dumb component
+import { PassengerCountComponent } from './components/passenger-count/passenger-count.component';
+import { PassengerDetailComponent } from './components/passenger-details/passenger-detail.component';
+
+// import the service , incase you dont providein decorator
+import { PassengerDashboardService } from './passenger-dashboard.service';
+
+@NgModule({
+  declarations: [
+    // container/ smart component
+    PassengerDashboardComponent,
+    PassengerViewerComponent,    <---- added there
+    // dumb component
+    PassengerCountComponent,
+    PassengerDetailComponent,
+  ],
+  imports: [BrowserModule, HttpClientModule],
+  exports: [PassengerDashboardComponent, PassengerViewerComponent],  <---- added there , to communicate outside
+  //providers: [PassengerDashboardService],
+})
+export class PassengerDashboardModule {}
+
+src\app\app.component.ts
+-----------------------
+
+import { Component } from '@angular/core';
+
+@Component({
+  selector: 'app-root',
+  styleUrls: ['./app.component.css'],
+  template: `
+    <div>
+      <!-- our application start from here -->
+      <!--  <passenger-dashboard></passenger-dashboard> -->   <-- so we commneed this component
+      <passenger-viewer></passenger-viewer>              <-- and aded a new componenet there
+    </div>
+  `,
+  // templateUrl: './app.component.html',
+})
+export class AppComponent {}
+
+
+2 Form stateless component (passenger-form.component.ts) and update the data structure , remove the child and add the baggage
+-------------------------------------------------------------------------------------------------------------------------------
+create a new dumb component passenger-form , which will be refrenced by container component passenger-viwer , and that will send passenger data to this passenger-form component.
+
+src\app\passenger-dashboard\components\passenger-form\passenger-form.component.ts
+
+passenger-form.component.ts
+-------------------------
+import { Component, Input } from '@angular/core';
+import { Passengers } from '../../model/passenger.interface';
+
+@Component({
+  selector: 'passenger-form',
+  styleUrls: ['./passenger-form.component.css'],
+  template: `
+    Passenger Form !!!
+    <div>{{ detail | json }}</div>
+  `,
+})
+export class PassengerFormComponent {
+  @Input()
+  detail: Passengers;   <--- created a custom detail property using @Input() decorators
+}
+
+
+passenger-dashboard.module.ts
+---------------------------------
+inform to module , thet new component passenger-form created.
+
+
+import { NgModule } from '@angular/core';
+import { BrowserModule } from '@angular/platform-browser';
+import { HttpClientModule } from '@angular/common/http';
+
+// container/ smart/ presentational
+import { PassengerDashboardComponent } from './container/passenger-dashboard/passenger-dashboard.component';
+import { PassengerViewerComponent } from './container/passenger-viewer/passenger-viewer.component';
+
+// dumb component
+import { PassengerCountComponent } from './components/passenger-count/passenger-count.component';
+import { PassengerDetailComponent } from './components/passenger-details/passenger-detail.component';
+import { PassengerFormComponent } from './components/passenger-form/passenger-form.component';   <---added there
+
+// import the service , incase you dont providein decorator
+import { PassengerDashboardService } from './passenger-dashboard.service';
+
+@NgModule({
+  declarations: [
+    // container/ smart component
+    PassengerDashboardComponent,
+    PassengerViewerComponent,
+    // dumb component
+    PassengerCountComponent,
+    PassengerDetailComponent,
+    PassengerFormComponent,  <---added there
+  ],
+  imports: [BrowserModule, HttpClientModule],
+  exports: [PassengerDashboardComponent, PassengerViewerComponent],
+  //providers: [PassengerDashboardService],
+})
+export class PassengerDashboardModule {}
+
+
+passenger-viewer.component.ts
+------------------------------
+import { Component, OnInit } from '@angular/core';
+import { Passengers } from '../../model/passenger.interface';
+import { PassengerDashboardService } from '../../passenger-dashboard.service';
+
+@Component({
+  selector: 'passenger-viewer',
+  styleUrls: ['./passenger-viewer.component.css'],
+  template: `
+    <div>
+      <passenger-form [detail]="passenger"></passenger-form>    <--- added there and create custom property detail
+    </div>
+  `,
+})
+export class PassengerViewerComponent implements OnInit {
+  passenger: Passengers;
+
+  constructor(private passengerService: PassengerDashboardService) {}
+  ngOnInit() {
+    this.passengerService.getPassenger(1).subscribe((passenger: Passengers) => {
+      this.passenger = passenger;
+    });
+  }
+}
+
+update the datastructure
+----------------------
+remove child property from Passenger interface.
+
+model\passenger.interface.ts
+---------------------------
+export interface Child {
+  name: string;
+  age: number;
+}
+
+export interface Passengers {
+  id: number;
+  fullname: string;
+  checkedIn: boolean;
+  checkInDate: number | null;
+  baggage: string;    <---- remove Child from there and add baggage with string type property
+}
+
+
+db.json
+--------
+changed the data structure , because we had removed child property from object , and added baggage property instead
+
+{
+  "passengers": [
+    {
+      "id": 1,
+      "fullname": "Steve123",
+      "checkedIn": true,
+      "checkInDate": 1490742000000,
+      "baggage": ""
+    },
+    {
+      "id": 2,
+      "fullname": "Rose",
+      "checkedIn": false,
+      "checkInDate": null,
+      "baggage": ""
+    },
+    {
+      "id": 4,
+      "fullname": "Louise",
+      "checkedIn": true,
+      "checkInDate": 1488412800000,
+      "baggage": ""
+    },
+    {
+      "id": 5,
+      "fullname": "Tina",
+      "checkedIn": false,
+      "checkInDate": null,
+      "baggage": ""
+    }
+  ]
+}
+
+
+
+passenger-detail.component.ts
+----------------------------------
+remove child from component code as well , because that would not be avaibale in our code now
+
+import {
+  Component,
+  Input,
+  Output,
+  EventEmitter,
+  OnInit,
+  OnChanges,
+} from '@angular/core';
+import { Passengers } from '../../model/passenger.interface';
+
+@Component({
+  selector: 'passenger-detail',
+  styleUrls: ['./passenger-detail.component.css'],
+  template: `<div>
+    <span class="status" [class.checked-in]="detail.checkedIn"></span>
+
+    <div>
+      <input
+        *ngIf="editing"
+        type="text"
+        [value]="detail.fullname"
+        #name
+        (input)="onNameChange(name.value)"
+      />
+    </div>
+
+    <div *ngIf="!editing">{{ detail.fullname }}</div>
+															<----- Child removed from there
+    <div class="date">
+      {{
+        detail.checkInDate
+          ? (detail.checkInDate | date: 'yMMMMd' | uppercase)
+          : 'not checked in'
+      }}
+    </div>
+
+    <button (click)="toggleEdit()">{{ editing ? 'Done' : 'Edit' }}</button>
+    <button (click)="onRemove()">Remove</button>
+  </div>`,
+})
+export class PassengerDetailComponent implements OnInit, OnChanges {
+  @Input()
+  detail: Passengers;
+
+  @Output()
+  onEdit = new EventEmitter();
+
+  @Output()
+  onDelete = new EventEmitter();
+
+  editing: boolean = false;
+
+  ngOnInit(): void {
+    //console.log('ngOnInit()');
+  }
+
+  ngOnChanges(changes: any): void {
+    this.detail = { ...changes.detail.currentValue };
+  }
+
+  onNameChange(value: string) {
+    this.detail.fullname = value;
+  }
+
+  toggleEdit() {
+    if (this.editing) {
+      this.onEdit.emit(this.detail);
+    }
+
+    this.editing = !this.editing;
+  }
+
+  onRemove() {
+    this.onDelete.emit(this.detail);
+  }
+}
+
+
+
+3 ngForm and ngModel
+4 Binding to radio buttons
+5 Binding to checkboxes
+=====================
+passenger-form.component.ts
+---------------------------
+import { Component, Input } from '@angular/core';
+import { Passengers } from '../../model/passenger.interface';
+
+@Component({
+  selector: 'passenger-form',
+  styleUrls: ['./passenger-form.component.css'],
+  template: `
+    Passenger Form !!!
+
+    <form #form="ngForm" (click)="test(form)">
+      {{ detail | json }}
+      <div>
+        <input type="text" name="fullname" [ngModel]="detail?.fullname" />
+      </div>
+
+      <div>
+        <input type="number" name="id" [ngModel]="detail?.id" />
+      </div>
+
+      <div>
+        <label
+          >Yes
+          <input
+            type="radio"
+            name="checkedIn"
+            [ngModel]="detail?.checkedIn"
+            [value]="true"
+            (ngModelChange)="toggleCheckedIn($event)"
+          />
+        </label>
+
+        <label
+          >Yes
+          <input
+            type="radio"
+            name="checkedIn"
+            [ngModel]="detail?.checkedIn"
+            [value]="false"
+            (ngModelChange)="toggleCheckedIn($event)"
+          />
+        </label>
+        <label>No</label>
+      </div>
+	  
+	 <!--  <div>
+          <input
+            type="checkbox"
+            name="checkedIn"
+            [ngModel]="detail?.checkedIn"
+            (ngModelChange)="toggleCheckedIn($event)"
+          />
+        </div>  -->
+
+
+      <div *ngIf="form.value?.checkedIn">
+        Checked in Date
+        <input type="text" name="checkInDate" [ngModel]="detail?.checkInDate" />
+      </div>
+
+      {{ form.value | json }}
+    </form>
+  `,
+})
+export class PassengerFormComponent {
+  @Input()
+  detail: Passengers;
+
+  toggleCheckedIn(event) {
+    console.log(event);
+    this.detail.checkInDate = Date.now();
+  }
+
+  test(form) {
+    console.log(form);
+  }
+}
+
+
+passenger-dashboard.module.ts
+-------------------------------
+import { NgModule } from '@angular/core';
+import { BrowserModule } from '@angular/platform-browser';
+import { HttpClientModule } from '@angular/common/http';
+import { FormsModule } from '@angular/forms';   <--- add the form module for ngForm , ngModel directive or functinality
+
+
+// container/ smart/ presentational
+import { PassengerDashboardComponent } from './container/passenger-dashboard/passenger-dashboard.component';
+import { PassengerViewerComponent } from './container/passenger-viewer/passenger-viewer.component';
+
+// dumb component
+import { PassengerCountComponent } from './components/passenger-count/passenger-count.component';
+import { PassengerDetailComponent } from './components/passenger-details/passenger-detail.component';
+import { PassengerFormComponent } from './components/passenger-form/passenger-form.component';
+
+// import the service , incase you dont providein decorator
+import { PassengerDashboardService } from './passenger-dashboard.service';
+
+
+@NgModule({
+  declarations: [
+    // container/ smart component
+    PassengerDashboardComponent,
+    PassengerViewerComponent,
+    // dumb component
+    PassengerCountComponent,
+    PassengerDetailComponent,
+    PassengerFormComponent,
+  ],
+  imports: [BrowserModule, HttpClientModule, FormsModule], <--- add the form module for ngForm , ngModel directive or functinality
+  exports: [PassengerDashboardComponent, PassengerViewerComponent],
+  //providers: [PassengerDashboardService],
+})
+export class PassengerDashboardModule {}
+
+
+/*
+Template driven form: in angular we have one way to handle form that is called template driven form , it means our form completely maintained in template , and ngFOrm.value will maintain our all input value.
+
+Imporatnt Rule:- always we have to give name proprty to input type element. because that will be used on NgFOrm.value object as a object property for corresposnding input.
+
+FormsModule --> this module is given by the angular which is responsible to give form based functinality , like ngForm directive , ngModel , NgModelChange directive.
+
+<form #form="ngForm"></from> --> it means you are assigning ngFOrm directive complex object to template ref variable , and ngForm object track the complete form activity here.
+
+ngModel --> if you only keep ngModel then it means it will attach input name to ngForm.value object , and whenever corresponsing input get changed this object will be changed automatically ,  means it will keep update ngForm.value object
+
+
+[ngModel] = "value-expression" --> means this will take one intial value of input and keep initial value to ngFOrm.value object.
+
+for example:-
+step 1
+-------
+<form #myform="ngForm">
+	<input type="text" name="myName">
+<form>
+ 
+if you check now  myform.value it gives empty object--> {}
+
+step 2 attaching ngModel
+-------
+<form #myform="ngForm">
+	<input type="text" name="myName" ngModel>
+<form>
+
+if you check now  myform.value it gives empty object--> {myName: ''}
+
+step 3 attaching property binding [ngModel]="value-expression"
+-------
+<form #myform="ngForm">
+	<input type="text" name="myName" ngModel="'sarang Jain'">
+<form>
+
+if you check now  myform.value it gives empty object--> {myName: 'sarang Jain'}
+
+*/
+
