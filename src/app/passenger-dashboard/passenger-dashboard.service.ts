@@ -23,6 +23,10 @@ export class PassengerDashboardService {
     return this.http.get(PASSENGER_API, httpOption);
   }
 
+  getPassenger(id) {
+    return this.http.get(`${PASSENGER_API}/${id}`);
+  }
+
   updatePassenger(passenger: Passengers) {
     return this.http.put(
       `${PASSENGER_API}/${passenger.id}`,

@@ -34,10 +34,6 @@ import { Passengers } from '../../model/passenger.interface';
       }}
     </div>
 
-    <div class="children">
-      {{ detail.children?.length || 0 }}
-    </div>
-
     <button (click)="toggleEdit()">{{ editing ? 'Done' : 'Edit' }}</button>
     <button (click)="onRemove()">Remove</button>
   </div>`,
