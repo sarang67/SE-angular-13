@@ -7,7 +7,10 @@ import { PassengerDashboardService } from '../../passenger-dashboard.service';
   styleUrls: ['./passenger-viewer.component.css'],
   template: `
     <div>
-      <passenger-form [detail]="passenger"></passenger-form>
+      <passenger-form
+        [detail]="passenger"
+        (onUpdate)="onUpdatehandler($event)"
+      ></passenger-form>
     </div>
   `,
 })
@@ -19,5 +22,13 @@ export class PassengerViewerComponent implements OnInit {
     this.passengerService.getPassenger(1).subscribe((data: Passengers) => {
       this.passenger = data;
     });
+  }
+
+  onUpdatehandler(value: Passengers) {
+    this.passengerService
+      .updatePassenger(value)
+      .subscribe((data: Passengers) => {
+        this.passenger = data;
+      });
   }
 }
