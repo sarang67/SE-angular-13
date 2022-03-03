@@ -3487,3 +3487,593 @@ export class PassengerViewerComponent implements OnInit {
       });
   }
 }
+
+
+*******************Component Routing********************
+
+1 Base href and RouterModule
+==============================
+one thing always remember in your index.html  , this line should be present  <base href="/" /> , you can see this is there , but if you remove your routing wont work.
+
+so when its come to work with Routing, you need to import RouterModule module in your app.
+
+
+app.module.ts
+--------------
+import { NgModule } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { BrowserModule } from '@angular/platform-browser';
+import { RouterModule } from '@angular/router';   <--- Added RouterModule 
+import { AppComponent } from './app.component';
+
+// custom module
+import { PassengerDashboardModule } from './passenger-dashboard/passenger-dashboard.module';
+
+@NgModule({
+  declarations: [AppComponent],
+  imports: [BrowserModule, FormsModule, PassengerDashboardModule],
+  bootstrap: [AppComponent],
+})
+export class AppModule {}
+
+
+2 Root module routes and outlet
+==============================
+A) so we have seen we imported RouterModule in our module , but there we have not put till now in the import array , because this is not very straight forward like others. 
+
+B) Make routing defination you can make in app module , or you can make seprate module to make routing defination . amd import routing defination module to in your main module. so what is routing defination , here you will define , which component will be loaded based on url fragment. if your url fragment is empty string '', means this is a home application root location , so this defination is a array of object.
+
+C) // Routing defination 
+const Routes: Route[] = [
+  { path: '', component: HomeComponent, pathMatch: 'full' },   
+];
+
+D) once routing defination is done we have to pass this defination objec in the RouterModule.forRoot(Routes) , in the module section in import array. 
+RouterModule.forRoot() , always remember for root level means app module we always use a forRoot() , and for feature module level we always use RouterModule.forChild().
+
+E) and after above 4 steps , we have to provide <router-outlet> </router-outlet> in our app component which will tell to the application , routing will start beneath of this tag.
+
+in our application , every feature module contains diffrent <router-outlet> </router-outlet> . as per their child route defination
+
+
+create a new component  --> src\app\home.component.ts
+
+home.component.ts
+----------------------
+import { Component } from '@angular/core';
+
+@Component({
+  selector: 'app-home',
+  template: ` <div><h1>Air Passenger Dashboard</h1></div> `,
+})
+export class HomeComponent {}
+
+
+app.module.ts
+--------------
+import { NgModule } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { BrowserModule } from '@angular/platform-browser';
+import { Route, RouterModule } from '@angular/router';
+import { AppComponent } from './app.component';
+import { HomeComponent } from './home.component';
+
+// custom module
+import { PassengerDashboardModule } from './passenger-dashboard/passenger-dashboard.module';
+
+// Routing defination 
+//here you are saying , if apath is root level then , load a home component , and the path would be exact path.
+const Routes: Route[] = [
+  { path: '', component: HomeComponent, pathMatch: 'full' },   
+];
+
+@NgModule({
+  declarations: [AppComponent, HomeComponent],
+  imports: [
+    BrowserModule,
+    FormsModule,
+    PassengerDashboardModule,
+    RouterModule.forRoot(Routes), <---- give the routing defination there
+  ],
+  bootstrap: [AppComponent],
+})
+export class AppModule {}
+
+
+app.component.ts
+---------------
+import { Component } from '@angular/core';
+
+@Component({
+  selector: 'app-root',
+  styleUrls: ['./app.component.css'],
+  template: `
+    <div>
+      <!-- our application start from here -->
+      <!-- <passenger-dashboard></passenger-dashboard> -->
+      <!--  <passenger-viewer></passenger-viewer> -->
+      <router-outlet></router-outlet>            <--- so here we commented above exported component , and use <router-outlet> tag and beaneatgh of this our routing will start
+    </div>
+  `,
+  // templateUrl: './app.component.html',
+})
+export class AppComponent {}
+
+
+
+3 Wildcard routes for 404 handling (wild card path **)
+========================================================
+suppose if our route path does not match , that is called wild card routing , and we mntion for that '**' , so its meaning  our defined component will be appeared,
+
+create a new component ---> src\app\not-found.component.ts
+
+not-found.component.ts
+------------------------
+import { Component } from '@angular/core';
+
+@Component({
+  selector: 'app-not-found',
+  template: ` <div><h1>Sorry your page is not found !!!</h1></div> `,
+})
+export class NotFoundComponent {}
+
+
+app.module.ts
+--------------
+import { NgModule } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { BrowserModule } from '@angular/platform-browser';
+import { Route, RouterModule } from '@angular/router';
+import { AppComponent } from './app.component';
+import { HomeComponent } from './home.component';
+import { NotFoundComponent } from './not-found.component';
+
+// custom module
+import { PassengerDashboardModule } from './passenger-dashboard/passenger-dashboard.module';
+
+const Routes: Route[] = [
+  { path: '', component: HomeComponent, pathMatch: 'full' },
+  { path: '**', component: NotFoundComponent },  <--- it means when path not found , our NotFoundComponent, component will be loaded
+];
+
+@NgModule({
+  declarations: [AppComponent, HomeComponent, NotFoundComponent],
+  imports: [
+    BrowserModule,
+    FormsModule,
+    PassengerDashboardModule,
+    RouterModule.forRoot(Routes),
+  ],
+  bootstrap: [AppComponent],
+})
+export class AppModule {}
+
+
+4 routerlink
+--------------
+We know user can navigate in website using two way , first one he , can direcyly hit the url , here routermodule recgnized any route defination your component will be shown, and another way we can navigate website from link which is avaibale on web page which will change the fragment and our routing will work again .
+so here we dont put only anchor tag and href , because our page will be refreshed , and we work in the single page application , so ere we use routerLink directive with the anchor tag, and dont use the href.
+
+ex:- <a routerLink="/">Go Home </a>  --> so here w ill give href link ro routerLink.
+
+
+app.component.ts
+---------------
+import { Component } from '@angular/core';
+
+@Component({
+  selector: 'app-root',
+  styleUrls: ['./app.component.css'],
+  template: `
+    <div>
+      <!-- our application start from here -->
+      <!-- <passenger-dashboard></passenger-dashboard> -->
+      <!--  <passenger-viewer></passenger-viewer> -->
+      <nav>
+        <a routerLink="/">Home</a> |     <---- we create a link with RouterLink directive
+        <a routerLink="/oops">404</a>    <---- we create a link with RouterLink directive
+      </nav>
+      <router-outlet></router-outlet>
+    </div>
+  `,
+  // templateUrl: './app.component.html',
+})
+export class AppComponent {}
+
+
+not-found.componenet.ts
+---------------------
+import { Component } from '@angular/core';
+
+@Component({
+  selector: 'app-not-found',
+  template: `
+    <div>
+      <h1>
+        Sorry your page is not found !!! want to go
+        <a routerLink="/"> home ? </a>    <---- we updated here as well
+      </h1>
+    </div>
+  `,
+})
+export class NotFoundComponent {}
+
+
+5 Styling active routes
+=========================
+so we have seen routerLink directive which we can use along with anchor tag, we have two more directive which we can use with anchor tag
+
+A) routerLink --> this work like href but without refresh page
+B) routerLinkActive --> so whenever link is activate or clicked routerLinkActive directiveapply the class which we have passed, in our example case it will apply active classs whechever link is clicked.
+3) routerLinkActiveOptions --> takes a   { exact: true } , to match the exact href link (routerLink) , suppose in below example we dont apply { exact: true } and we go to /oops , our active class will be applicable to 404 , as well Home , because home link condition is also satisffied , so we have to make sure this should check complete  exact url.
+
+ <a
+  routerLink="/"
+  routerLinkActive="active"
+  [routerLinkActiveOptions]="{ exact: true }"
+  >Home</a
+>
+
+<a routerLink="/oops" routerLinkActive="active">404</a>
+
+
+app.component.ts
+-------------------
+import { Component } from '@angular/core';
+
+@Component({
+  selector: 'app-root',
+  styleUrls: ['./app.component.css'],
+  template: `
+    <div>
+      <!-- our application start from here -->
+      <!-- <passenger-dashboard></passenger-dashboard> -->
+      <!--  <passenger-viewer></passenger-viewer> -->
+      <nav class="nav">
+        <a
+          routerLink="/"
+          routerLinkActive="active"
+          [routerLinkActiveOptions]="{ exact: true }"     <-- added all three directive here in the a link.
+          >Home</a
+        >
+        |
+        <a routerLink="/oops" routerLinkActive="active">404</a>
+      </nav>
+      <router-outlet></router-outlet>
+    </div>
+  `,
+  // templateUrl: './app.component.html',
+})
+export class AppComponent {}
+
+
+app.component.css
+-----------------
+.nav {
+  margin: 0 0 10px;
+  padding: 0 0 20px;
+  border-bottom: 1px solid #dce5f2;
+}
+
+a {
+  background: #3a4250;
+  color: #fff;
+  padding: 4px 10px;
+  margin: 0 2px;
+  border-radius: 2px;
+}
+
+a.active {
+  color: #b690f1;
+  background: #363c48;
+}
+
+
+6 Dynamic navigation with ngFor
+=============================
+here we can take advantage of ngFor , and create our structure array form , so that we can iterate them using *ngFOr ,and in future we can add more link into them.
+
+
+import { Component } from '@angular/core';
+
+interface Nav {
+  link: string;
+  name: string;
+  exact: boolean;
+}
+
+@Component({
+  selector: 'app-root',
+  styleUrls: ['./app.component.css'],
+  template: `
+    <div>
+      <!-- our application start from here -->
+      <!-- <passenger-dashboard></passenger-dashboard> -->
+      <!--  <passenger-viewer></passenger-viewer> -->
+      <nav class="nav">
+        <a
+          *ngFor="let item of nav"
+          [routerLink]="item.link"
+          routerLinkActive="active"
+          [routerLinkActiveOptions]="{ exact: item.exact }"
+          >{{ item.name }}</a
+        >
+      </nav>
+      <router-outlet></router-outlet>
+    </div>
+  `,
+  // templateUrl: './app.component.html',
+})
+export class AppComponent {
+  nav: Nav[] = [
+    {
+      link: '/',
+      name: 'Home',
+      exact: true,
+    },
+    {
+      link: '/oops',
+      name: '404',
+      exact: false,
+    },
+  ];
+}
+
+
+7 Feature-module routes with forChild()
+========================================
+Like every root module , we can add routing for child module or feature module , for that we have to do the same process , like add RouterModule , and imprt it with routes defination , but remember we could have multiple `RouterModule.forChild()` with eavery feature or child odule , but would have always only one for root module.
+
+
+passenger-dashboard.module.ts
+------------------------------------
+import { NgModule } from '@angular/core';
+import { BrowserModule } from '@angular/platform-browser';
+import { HttpClientModule } from '@angular/common/http';
+import { FormsModule } from '@angular/forms';
+import { Route, RouterModule } from '@angular/router';
+
+// container/ smart/ presentational
+import { PassengerDashboardComponent } from './container/passenger-dashboard/passenger-dashboard.component';
+import { PassengerViewerComponent } from './container/passenger-viewer/passenger-viewer.component';
+
+// dumb component
+import { PassengerCountComponent } from './components/passenger-count/passenger-count.component';
+import { PassengerDetailComponent } from './components/passenger-details/passenger-detail.component';
+import { PassengerFormComponent } from './components/passenger-form/passenger-form.component';
+
+import { PassengerDashboardService } from './passenger-dashboard.service';
+
+const routes: Route[] = [
+  { path: 'passengers', component: PassengerDashboardComponent },
+];
+
+@NgModule({
+  declarations: [
+    // container/ smart component
+    PassengerDashboardComponent,
+    PassengerViewerComponent,
+    // dumb component
+    PassengerCountComponent,
+    PassengerDetailComponent,
+    PassengerFormComponent,
+  ],
+  imports: [
+    BrowserModule,
+    HttpClientModule,
+    FormsModule,
+    RouterModule.forChild(routes),  <--- added router module with feature module alng with Route definations
+  ],
+  
+// <--- we have remove  this exports , becasue we wont show manually , not this component, will be shown based on routing , and this will be handled by RouterModule.
+
+  //exports: [PassengerDashboardComponent, PassengerViewerComponent], 
+  //providers: [PassengerDashboardService],
+})
+export class PassengerDashboardModule {}
+
+
+app.component.ts
+-----------------------
+we have enabled routig through , in case we type in browser , now we are going to give anchor link for user so he can navigate to this page using click that.
+
+import { Component } from '@angular/core';
+
+interface Nav {
+  link: string;
+  name: string;
+  exact: boolean;
+}
+
+@Component({
+  selector: 'app-root',
+  styleUrls: ['./app.component.css'],
+  template: `
+    <div>
+      <!-- our application start from here -->
+      <!-- <passenger-dashboard></passenger-dashboard> -->
+      <!--  <passenger-viewer></passenger-viewer> -->
+      <nav class="nav">
+        <a
+          *ngFor="let item of nav"
+          [routerLink]="item.link"
+          routerLinkActive="active"
+          [routerLinkActiveOptions]="{ exact: item.exact }"
+          >{{ item.name }}</a
+        >
+      </nav>
+      <router-outlet></router-outlet>
+    </div>
+  `,
+  // templateUrl: './app.component.html',
+})
+export class AppComponent {
+  nav: Nav[] = [
+    {
+      link: '/',
+      name: 'Home',
+      exact: true,
+    },
+    {                            <----- here we added , one more anchor link for /passenger  fragment.
+      link: '/passengers',
+      name: 'Passengers',
+      exact: true,
+    },
+    {
+      link: '/oops',
+      name: '404',
+      exact: false,
+    },
+  ];
+}
+
+8 Child and dynamic routes using route param or parameter
+======================================================
+till now we have added routing defination straight forward , now we will she how we  can use child routes defination or child routes with route param.
+so for example what if
+
+http://localhost:4200/ ---> root
+
+http://localhost:4200/passengers  --> passenger component
+
+http://localhost:4200/something/fragment  --> so here is fragment is not child  this is complete one fragment `something/fragment`
+
+
+so what is child and what is route parameter
+********************************************
+http://localhost:4200/passengers/1 --> so you can see there 1 , and this can be changed every time and based on this parameter we can show diffrent diffrent component so after passenger these are routeparam , and we write like this
+
+so here you can see :passengerID (in below code) is the route parameter which we mentioned with collon  and now this is child there. 
+
+http://localhost:4200/passengers/1 ---> will get passengerID here 1
+http://localhost:4200/passengers/2 ---> will get passengerID here 2
+http://localhost:4200/passengers/something ---> will get passengerID here something
+
+so this value will be changed , and we will be applying logic based on this dynamic route parameter.
+
+const routes: Route[] = [
+  {
+    path: 'passengers',
+
+    children: [
+      { path: '', component: PassengerDashboardComponent },
+      { path: ':passengerID', component: PassengerViewerComponent },  
+    ],
+
+    /* not valid in case you have route parameter , because if ypu keep PassengerDashboardComponent seprtae
+      your child parameter component will never, be shown always PassengerDashboardComponent component 
+      will be shown, so make this component inside the children with '' empty path
+    */
+    //component: PassengerDashboardComponent,
+  },
+];
+
+passenger-dashboard.module.ts
+-----------------------------
+import { NgModule } from '@angular/core';
+import { BrowserModule } from '@angular/platform-browser';
+import { HttpClientModule } from '@angular/common/http';
+import { FormsModule } from '@angular/forms';
+import { Route, RouterModule } from '@angular/router';
+
+// container/ smart/ presentational
+import { PassengerDashboardComponent } from './container/passenger-dashboard/passenger-dashboard.component';
+import { PassengerViewerComponent } from './container/passenger-viewer/passenger-viewer.component';
+
+// dumb component
+import { PassengerCountComponent } from './components/passenger-count/passenger-count.component';
+import { PassengerDetailComponent } from './components/passenger-details/passenger-detail.component';
+import { PassengerFormComponent } from './components/passenger-form/passenger-form.component';
+
+import { PassengerDashboardService } from './passenger-dashboard.service';
+
+const routes: Route[] = [
+  {
+    path: 'passengers',
+
+    children: [
+      { path: '', component: PassengerDashboardComponent },
+      { path: ':passengerID', component: PassengerViewerComponent },
+    ],
+
+    /* not valid in case you have route parameter , because if ypu keep PassengerDashboardComponent seprtae
+      your child parameter component will never, be shown always PassengerDashboardComponent component 
+      will be shown, so make this component inside the children with '' empty path
+    */
+    //component: PassengerDashboardComponent,
+  },
+];
+
+@NgModule({
+  declarations: [
+    // container/ smart component
+    PassengerDashboardComponent,
+    PassengerViewerComponent,
+    // dumb component
+    PassengerCountComponent,
+    PassengerDetailComponent,
+    PassengerFormComponent,
+  ],
+  imports: [
+    BrowserModule,
+    HttpClientModule,
+    FormsModule,
+    RouterModule.forChild(routes),
+  ],
+  //exports: [PassengerDashboardComponent, PassengerViewerComponent],
+  //providers: [PassengerDashboardService],
+})
+export class PassengerDashboardModule {}
+
+
+9 Access Route params, data-fetching 
+==========================================
+So how we can get the route param in agular , so we have ActivatedRoute service , which is coming from Router module we can inject this in our constructor , and use it , so in this class we have params property, which gives us a route parameter, always remember inside ActivatedRoute service all the property is observable types so if we need the data we have to subscribe them, so here we will subscribe the activatedRoute.params property.
+
+
+import { Component, OnInit } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';          <--- imported  ActivatedRoute service
+import { Passengers } from '../../model/passenger.interface';
+import { PassengerDashboardService } from '../../passenger-dashboard.service';
+
+import { switchMap } from 'rxjs/operators';
+
+@Component({
+  selector: 'passenger-viewer',
+  styleUrls: ['./passenger-viewer.component.css'],
+  template: `
+    <div>
+      <passenger-form
+        [detail]="passenger"
+        (onUpdate)="onUpdatehandler($event)"
+      ></passenger-form>
+    </div>
+  `,
+})
+export class PassengerViewerComponent implements OnInit {
+  constructor(
+    private passengerService: PassengerDashboardService,
+    private activatedRoute: ActivatedRoute
+  ) {}
+  passenger: Passengers;
+
+  ngOnInit() { 
+    this.activatedRoute.params.subscribe((data) => {           <--- we subscribed activatedRoute.params property to get route parameter data 
+      // console.log(data);
+      this.passengerService
+        .getPassenger(data['passengerID'])     <--- and we used that data here to fetch perticular pessenger
+        .subscribe((data: Passengers) => {
+          this.passenger = data;
+        });
+    });
+
+
+  onUpdatehandler(value: Passengers) {
+    this.passengerService
+      .updatePassenger(value)
+      .subscribe((data: Passengers) => {
+        this.passenger = data;
+      });
+  }
+}
+
