@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Passengers } from '../../model/passenger.interface';
 import { PassengerDashboardService } from '../../passenger-dashboard.service';
 
@@ -8,6 +8,7 @@ import { PassengerDashboardService } from '../../passenger-dashboard.service';
   styleUrls: ['./passenger-viewer.component.css'],
   template: `
     <div>
+      <button (click)="goBack()">go Back</button>
       <passenger-form
         [detail]="passenger"
         (onUpdate)="onUpdatehandler($event)"
@@ -18,7 +19,8 @@ import { PassengerDashboardService } from '../../passenger-dashboard.service';
 export class PassengerViewerComponent implements OnInit {
   constructor(
     private passengerService: PassengerDashboardService,
-    private activatedRoute: ActivatedRoute
+    private activatedRoute: ActivatedRoute,
+    private router: Router
   ) {}
   passenger: Passengers;
 
@@ -44,5 +46,9 @@ export class PassengerViewerComponent implements OnInit {
       .subscribe((data: Passengers) => {
         this.passenger = data;
       });
+  }
+
+  goBack() {
+    this.router.navigate(['/passenger']);
   }
 }

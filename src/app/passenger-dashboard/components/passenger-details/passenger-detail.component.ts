@@ -36,6 +36,7 @@ import { Passengers } from '../../model/passenger.interface';
 
     <button (click)="toggleEdit()">{{ editing ? 'Done' : 'Edit' }}</button>
     <button (click)="onRemove()">Remove</button>
+    <button (click)="goToPassenger()">View Passenger</button>
   </div>`,
 })
 export class PassengerDetailComponent implements OnInit, OnChanges {
@@ -47,6 +48,9 @@ export class PassengerDetailComponent implements OnInit, OnChanges {
 
   @Output()
   onDelete = new EventEmitter();
+
+  @Output()
+  onView = new EventEmitter();
 
   editing: boolean = false;
 
@@ -72,5 +76,9 @@ export class PassengerDetailComponent implements OnInit, OnChanges {
 
   onRemove() {
     this.onDelete.emit(this.detail);
+  }
+
+  goToPassenger() {
+    this.onView.emit(this.detail);
   }
 }

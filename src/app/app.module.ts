@@ -12,6 +12,7 @@ import { NotFoundComponent } from './not-found.component';
 // http://localhost:4200/
 const route: Route[] = [
   { path: '', component: HomeComponent },
+  // { path: '', redirectTo: 'passenger', pathMatch: 'full' },
   { path: '**', component: NotFoundComponent },
 ];
 
