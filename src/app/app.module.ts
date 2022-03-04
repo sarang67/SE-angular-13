@@ -8,16 +8,25 @@ import { HomeComponent } from './home.component';
 // custom module
 import { PassengerDashboardModule } from './passenger-dashboard/passenger-dashboard.module';
 import { NotFoundComponent } from './not-found.component';
+import { FileSizeComponent } from './custom-pipe/filesize.component';
+import { FileSizePipe } from './custom-pipe/filesize.pipe';
 
 // http://localhost:4200/
 const route: Route[] = [
   { path: '', component: HomeComponent },
   // { path: '', redirectTo: 'passenger', pathMatch: 'full' },
+  { path: 'custom-pipe', component: FileSizeComponent },
   { path: '**', component: NotFoundComponent },
 ];
 
 @NgModule({
-  declarations: [AppComponent, HomeComponent, NotFoundComponent],
+  declarations: [
+    AppComponent,
+    HomeComponent,
+    NotFoundComponent,
+    FileSizeComponent,
+    FileSizePipe,
+  ],
   imports: [
     BrowserModule,
     FormsModule,

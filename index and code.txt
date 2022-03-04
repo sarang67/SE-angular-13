@@ -4077,3 +4077,468 @@ export class PassengerViewerComponent implements OnInit {
   }
 }
 
+10 Imperative routing API
+============================
+passenger-viewer.component.ts
+------------------------------
+
+import { Component, OnInit } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
+import { Passengers } from '../../model/passenger.interface';
+import { PassengerDashboardService } from '../../passenger-dashboard.service';
+
+@Component({
+  selector: 'passenger-viewer',
+  styleUrls: ['./passenger-viewer.component.css'],
+  template: `
+    <div>
+      <button (click)="goBack()">&lsaquo; Go Back</button>
+      <passenger-form
+        [detail]="passenger"
+        (onUpdate)="onUpdatehandler($event)"
+      ></passenger-form>
+    </div>
+  `,
+})
+export class PassengerViewerComponent implements OnInit {
+  constructor(
+    private passengerService: PassengerDashboardService,
+    private activatedRoute: ActivatedRoute,
+    private router: Router   <--- inserted or injected Router for the imperative routing
+  ) {}
+  passenger: Passengers;
+
+  ngOnInit() {
+    this.activatedRoute.params.subscribe((data) => {
+      console.log(data);
+
+      this.passengerService
+        .getPassenger(data['passengerId'])
+        .subscribe((data: Passengers) => {
+          this.passenger = data;
+        });
+    });
+
+    // this.passengerService.getPassenger(1).subscribe((data: Passengers) => {
+    //   this.passenger = data;
+    // });
+  }
+
+  onUpdatehandler(value: Passengers) {
+    this.passengerService
+      .updatePassenger(value)
+      .subscribe((data: Passengers) => {
+        this.passenger = data;
+      });
+  }
+
+  goBack() {
+    this.router.navigate(['/passenger']);  <-- used navigate method for navigate the page , we have to pass the url shape in array.
+  }
+}
+
+
+
+passenger-detail.component.ts
+--------------------------------
+import {
+  Component,
+  Input,
+  Output,
+  EventEmitter,
+  OnInit,
+  OnChanges,
+} from '@angular/core';
+import { Passengers } from '../../model/passenger.interface';
+
+@Component({
+  selector: 'passenger-detail',
+  styleUrls: ['./passenger-detail.component.css'],
+  template: `<div>
+    <span class="status" [class.checked-in]="detail.checkedIn"></span>
+
+    <div>
+      <input
+        *ngIf="editing"
+        type="text"
+        [value]="detail.fullname"
+        #name
+        (input)="onNameChange(name.value)"
+      />
+    </div>
+
+    <div *ngIf="!editing">{{ detail.fullname }}</div>
+
+    <div class="date">
+      {{
+        detail.checkInDate
+          ? (detail.checkInDate | date: 'yMMMMd' | uppercase)
+          : 'not checked in'
+      }}
+    </div>
+
+    <button (click)="toggleEdit()">{{ editing ? 'Done' : 'Edit' }}</button>
+    <button (click)="onRemove()">Remove</button>
+    <button (click)="goToPassenger()">View Passenger</button>  <-- created a button for navigare
+  </div>`,
+})
+export class PassengerDetailComponent implements OnInit, OnChanges {
+  @Input()
+  detail: Passengers;
+
+  @Output()
+  onEdit = new EventEmitter();
+
+  @Output()
+  onDelete = new EventEmitter();
+
+  @Output()
+  onView = new EventEmitter();  <-- created a new event for view
+ 
+  editing: boolean = false;
+
+  ngOnInit(): void {
+    //console.log('ngOnInit()');
+  }
+
+  ngOnChanges(changes: any): void {
+    this.detail = { ...changes.detail.currentValue };
+  }
+
+  onNameChange(value: string) {
+    this.detail.fullname = value;
+  }
+
+  toggleEdit() {
+    if (this.editing) {
+      this.onEdit.emit(this.detail);
+    }
+
+    this.editing = !this.editing;
+  }
+
+  onRemove() {
+    this.onDelete.emit(this.detail);
+  }
+
+  goToPassenger() {
+    this.onView.emit(this.detail);   <-- emitting the passenger.
+}
+
+
+
+passenger-dashboard\passenger-dashboard.component.ts
+-----------------------------------------------------
+
+import { Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
+import { Passengers } from '../../model/passenger.interface';
+import { PassengerDashboardService } from '../../passenger-dashboard.service';
+
+@Component({
+  selector: 'passenger-dashboard',
+  styleUrls: ['./passenger-dashboard.component.css'],
+  template: `
+    <div>
+      <passenger-count [items]="passengers"></passenger-count>
+
+      <passenger-detail
+        *ngFor="let passenger of passengers"
+        [detail]="passenger"
+        (onEdit)="onEditHandler($event)"
+        (onDelete)="onDeleteHandler($event)"
+        (onView)="onViewHandler($event)"   <-- register new custom event from Passenger-detail component
+      >
+      </passenger-detail>
+    </div>
+  `,
+})
+export class PassengerDashboardComponent implements OnInit {
+  passengers: Passengers[] = [];
+  constructor(
+    private passengerDashboardService: PassengerDashboardService,
+    private router: Router  <-- injected the Router
+  ) {}
+
+  ngOnInit() {
+    this.passengerDashboardService
+      .getPassengers()
+      .subscribe((data: Passengers[]) => {
+        this.passengers = data;
+      });
+  }
+
+  onEditHandler(event: Passengers) {
+    this.passengerDashboardService.updatePassenger(event).subscribe((data) => {
+      console.log(data);
+      this.passengers = this.passengers.map((passenger) => {
+        if (passenger.id === event.id) {
+          passenger = { ...event };
+        }
+        return passenger;
+      });
+    });
+  }
+
+  onDeleteHandler(event: Passengers) {
+    this.passengerDashboardService.removePassenger(event).subscribe((data) => {
+      this.passengers = this.passengers.filter((passenger) => {
+        return passenger.id !== event.id;
+      });
+    });
+  }
+
+  onViewHandler(event: Passengers) {
+    this.router.navigate(['/', 'passenger', event.id]); <-- navigate to actual url tree
+  }
+}
+
+
+11 Applying redirects
+======================
+so we can ask angular straight forward , if its maching some certian path then it redirect to perticular component , here when our application will load it will automatically redirect to passenger , we can use this wild card routing , and other places ,  pathMatch: 'full' property is required for it.
+
+{ path: '', redirectTo: '/passenger', pathMatch: 'full' },
+
+app.module.ts
+--------------
+
+import { NgModule } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { BrowserModule } from '@angular/platform-browser';
+import { AppComponent } from './app.component';
+import { Route, RouterModule } from '@angular/router';
+import { HomeComponent } from './home.component';
+
+// custom module
+import { PassengerDashboardModule } from './passenger-dashboard/passenger-dashboard.module';
+import { NotFoundComponent } from './not-found.component';
+
+// http://localhost:4200/
+const route: Route[] = [
+  // { path: '', component: HomeComponent },
+  { path: '', redirectTo: '/passenger', pathMatch: 'full' },  <-- applied redirect , and commnet
+  { path: '**', component: NotFoundComponent },
+];
+
+@NgModule({
+  declarations: [AppComponent, HomeComponent, NotFoundComponent],
+  imports: [
+    BrowserModule,
+    FormsModule,
+    PassengerDashboardModule,
+    RouterModule.forRoot(route),
+  ],
+  bootstrap: [AppComponent],
+})
+export class AppModule {}
+
+/*
+// component imnformation
+  declarations: [AppComponent],
+
+// other modules information  
+  imports: [BrowserModule],
+*/
+
+
+
+*************************************Angular Advance*************************
+
+********************************1 Custom Pipes**********************
+
+1 Creating a custom pipe
+=========================
+You can create your own custom pipe for data transformation.
+
+src\app\custom-pipe\filesize.component.ts
+---------------------------------------
+import { Component, OnInit } from '@angular/core';
+
+interface File {
+  name: string;
+  size: number;
+  type: string;
+}
+
+@Component({
+  selector: 'file-size',
+  template: `
+    <div>
+      <div *ngFor="let file of files">
+        <p>{{ file.name }}</p>
+        <p>
+          <strong>{{ file.size | filesize: 'Megabite' }}</strong>
+        </p>
+      </div>
+    </div>
+  `,
+})
+export class FileSizeComponent implements OnInit {
+  files: File[];
+  ngOnInit() {
+    this.files = [
+      { name: 'logo.svg', size: 2120109, type: 'image/svg' },
+      { name: 'banner.jpg', size: 18029, type: 'image/jpg' },
+      { name: 'background.png', size: 1784562, type: 'image/png' },
+    ];
+  }
+}
+
+
+src\app\custom-pipe\filesize.pipe.ts
+------------------------------------
+import { Component, OnInit } from '@angular/core';
+
+// import pipe decorator and PipeTransform interface
+import { Pipe, PipeTransform } from '@angular/core';   
+
+@Pipe({ name: 'Filesize' })
+export class FileSizePipe implements PipeTransform {
+  transform(value: any, size = 'mb') {   <--- implement  transform method to transsfer each data
+    const convertToMB = value / 1024 / 1024;
+    return convertToMB.toFixed(2) + size;
+  }
+}
+
+
+// app.module.ts
+------------------
+import { NgModule } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { BrowserModule } from '@angular/platform-browser';
+import { AppComponent } from './app.component';
+import { Route, RouterModule } from '@angular/router';
+import { HomeComponent } from './home.component';
+
+// custom module
+import { PassengerDashboardModule } from './passenger-dashboard/passenger-dashboard.module';
+import { NotFoundComponent } from './not-found.component';
+import { FileSizeComponent } from './custom-pipe/filesize.component';
+import { FileSizePipe } from './custom-pipe/filesize.pipe'; 
+
+// http://localhost:4200/
+const route: Route[] = [
+  { path: '', component: HomeComponent },
+  // { path: '', redirectTo: '/passenger', pathMatch: 'full' },
+  { path: 'custom-pipe', component: FileSizeComponent },
+  { path: '**', component: NotFoundComponent },
+];
+
+@NgModule({
+  declarations: [
+    AppComponent,
+    HomeComponent,
+    NotFoundComponent,
+    FileSizeComponent,
+    FileSizePipe,  <--- include all pipe, component and directive here
+  ],
+  imports: [
+    BrowserModule,
+    FormsModule,
+    PassengerDashboardModule,
+    RouterModule.forRoot(route),
+  ],
+  bootstrap: [AppComponent],
+})
+export class AppModule {}
+
+
+
+/*
+way of routing ( declarative routing v/s imperative routing)
+************************************************************
+There are two ways of two achive routing (means change the url).
+
+A) declarative template based navigation with the routerLink directive
+----------------------
+As we have included RouterModule in our app, we can use the routerLink directive to define router navigation links in our template. which we have done in above example. We can either hardcode a string directly in the template, like its the case of the home route or the courses route. But we can also pass it an expression. If so we need to pass it an array containing the multiple URL path parts that we want to navigate to: in this case we want to navigate to the /lessons path.
+
+B) programmatic or imperative navigation with the Router API.
+------------------------------------------------------------
+Another way of doing router navigation is to use the router programmatic API to do so. For that we just have to inject the router into our component, and make use of either the navigate or navigateByUrl navigation methods, which we will see in this example.
+
+
+In Angular, RouterLink is a directive for navigating to a different route declaratively. Router.navigate and Router.navigateByURL are two methods available to the Router class to navigate imperatively in your component classes.
+
+Using RouterLink (declrative way)
+----------------
+A typical link in HTML looks like this:
+
+This example link will direct the user to the /example page.
+
+`
+<a href="/example">
+  Example HTML link.
+</a>
+`
+
+However, a single page application (SPA) does not have different pages to link to. Instead, it has different views to display to the user. To allow a user to navigate and change the view, you will want to use the RouterLink directive instead of href:
+`
+<a routerLink="/users/sammy">
+  Link that uses a string.
+</a>
+`
+
+This RouterLink example will direct the user to the component at /users/sammy.
+
+The different URL segments can also be passed in an array like this:
+`
+<a [routerLink]="['/', 'users', 'sammy']">
+  Link that uses an array.
+</a>
+`
+
+above These two examples are formatted differently but will be directed to the same component at /users/sammy.
+
+
+Using Router (imperative way)
+----------------------------
+There are two methods available on Angular’s Router class to navigate imperatively in your component classes: Router.navigate and Router.navigateByUrl. Both methods return a promise that resolves to true if the navigation is successful, null if there’s no navigation, false if the navigation fails, or is completely rejected if there’s an error.
+
+To use either method, you’ll first want to make sure that the Router class is injected into your component class.
+First, import Router into your component class:
+
+Router.navigate
+-------------
+You pass in an array of URL segments to Router.navigate.
+Here’s a basic example using the Router.navigate method:
+`
+goPlaces() {
+  this.router.navigate(['/', 'users']);
+}
+`
+
+And here’s an example demonstrating how Router.navigate is thenable:
+
+`
+goPlaces() {
+  this.router.navigate(['/', 'users'])
+    .then(nav => {
+      console.log(nav); // true if navigation is successful
+    }, err => {
+      console.log(err) // when there's an error
+    });
+}`
+
+If Router.navigate is successful in this example, it will display true. If Router.navigate is unsuccessful in this example, it will display an error.
+
+Router.navigateByUrl
+---------------------
+Router.navigateByUrl is similar to Router.navigate, except that a string is passed in instead of URL segments. The navigation should be absolute and start with a /.
+`
+goPlaces() {
+  this.router.navigateByUrl('/users;display=verbose/sammy');
+}
+`
+
+In this example, Router.navigateByUrl will navigate to /users;display=verbose/sammy.
+
+
+Here’s a basic example using the Router.navigateByUrl method:
+
+Conclusion
+In this article, you learned about navigation in Angular applications. You were introduced to RouterLink, Router.navigate, and Router.navigateByURL.
+
+
+*/

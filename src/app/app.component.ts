@@ -34,5 +34,6 @@ export class AppComponent {
     { link: '/', exact: true, name: 'Home' },
     { link: '/passenger', exact: true, name: 'Passenger dashboard' },
     { link: '/oops', exact: false, name: '404' },
+    { link: '/custom-pipe', exact: false, name: 'custom pipe' },
   ];
 }
